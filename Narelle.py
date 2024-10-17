@@ -72,7 +72,8 @@ class Narelle:
         response = self.llm.invoke(
             self.sysmsg + "\nContext: " + " ".join(context) + "\nQuery: " + query
         )
-        print(response.content + "\n")
+
+        return response.content
 
 
 if __name__ == "__main__":
