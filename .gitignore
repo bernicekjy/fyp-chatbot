@@ -1,4 +1,7 @@
 .idea/
-.ruff_cache
+.ruff_cache/
+.DS_Store
+__pycache__/
 
+.env
 test_results/
