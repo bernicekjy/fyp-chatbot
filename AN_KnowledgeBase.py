@@ -1,5 +1,5 @@
 from langchain_openai import AzureOpenAIEmbeddings
-from langchain.document_loaders import PyPDFLoader, Docx2txtLoader
+from langchain.document_loaders import PyPDFLoader, Docx2txtLoader, CSVLoader
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
@@ -17,6 +17,13 @@ from langchain.text_splitter import CharacterTextSplitter
 from azure.search.documents import SearchClient
 import uuid
 from pathlib import Path
+from dotenv import load_dotenv
+from langchain_community.document_loaders import TextLoader
+import pprint
+
+# Load environment variables from the .env file
+load_dotenv()
+
 
 class KnowledgeBaseManager:
     def __init__(self):
@@ -36,21 +43,7 @@ class KnowledgeBaseManager:
         # Defines instance of CharacterTextSplitter class with chunk size of 1500 and chunk overlap of 500
         self.text_splitter = CharacterTextSplitter(chunk_size=1500, chunk_overlap=500)
 
-
-    def load_documents(self, file_path:str):
-        if file_path.endswith(".pdf"):
-            # Load PDF files using PyPDFLoader
-            loader = PyPDFLoader(file_path)
-            docs = loader.load()
-
-        elif file_path.endswith(".docx"):
-            # Load DOCX files using Docx2txtLoader
-            loader = Docx2txtLoader(file_path)
-            docs = loader.load()
-        return docs[0]
-
-
-    def create_index(self, index_name):
+    def create_index(self, index_name):  # for course
         try:
             # Defines instance of SearchIndexClient class
             search_index_client = SearchIndexClient(
@@ -118,13 +111,14 @@ class KnowledgeBaseManager:
         except Exception as e:
             return e
 
-
     def add_or_update_docs(self, documents, index_name):
         try:
             search_client = SearchClient(
                 endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
                 index_name=index_name,
-                credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
+                credential=AzureKeyCredential(
+                    os.environ.get("AZURE_AI_SEARCH_API_KEY")
+                ),
             )
 
             # List to store all the docs that need to be added
@@ -136,9 +130,12 @@ class KnowledgeBaseManager:
             # Loop to separate the docs that need to be updated from the docs that need to be added
             for doc in documents:
                 filename = Path(doc.metadata["source"]).name
+
+                # check if document already exists
                 search_results = list(
                     search_client.search(filter=f"filename eq '{filename}'")
-                )  # check if document already exists
+                )
+
                 split_docs = self.text_splitter.split_documents([doc])
 
                 if search_results:
@@ -160,9 +157,11 @@ class KnowledgeBaseManager:
                                 "filename": filename,
                             }
                         )
+
                 else:
-                    print("add!")
-                    docs_to_add_page_content = [sdoc.page_content for sdoc in split_docs]
+                    docs_to_add_page_content = [
+                        sdoc.page_content for sdoc in split_docs
+                    ]
                     docs_to_add_embeddings = self.embeddings.embed_documents(
                         docs_to_add_page_content
                     )
@@ -177,6 +176,8 @@ class KnowledgeBaseManager:
                             }
                         )
 
+                    print(f"added {file_name}!")
+
             if docs_to_update_final:
                 search_client.merge_documents(docs_to_update_final)
 
@@ -188,7 +189,6 @@ class KnowledgeBaseManager:
         except Exception as e:
             print(f"An error occurred: {e}")
             return e
-
 
     def delete_embeddings_function(self, fileName, index_name):
         search_client = SearchClient(
@@ -216,7 +216,6 @@ class KnowledgeBaseManager:
             print(f"An error occurred: {e}")
             return False
 
-
     def delete_index_function(self, index_name):
         search_index_client = SearchIndexClient(
             os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
@@ -228,3 +227,68 @@ class KnowledgeBaseManager:
         except Exception as e:
             print(f"An error occurred: {e}")
             return False
+
+
+def load_document(file_path: str):
+    # Loads the document from the local directory
+
+    if file_path.endswith(".pdf"):
+        # Load PDF files using PyPDFLoader
+        loader = PyPDFLoader(file_path)
+        docs = loader.load()
+    elif file_path.endswith(".docx"):
+        # Load DOCX files using Docx2txtLoader
+        loader = Docx2txtLoader(file_path)
+        docs = loader.load()
+    elif file_path.endswith(".csv"):
+        # Load CSV files with CSVLoader
+        loader = CSVLoader(file_path)
+        docs = loader.load()
+    else:
+        # if unidentified file type, use unstructured loader
+        loader = TextLoader(file_path)
+        docs = loader.load()
+
+    print(f"loaded {file_path}")
+
+    return docs[0]
+
+
+if __name__ == "__main__":
+    kb = KnowledgeBaseManager()
+    new_index_name = "fyp-sc1015"
+
+    # # creating index
+    # kb.create_index(
+    #     index_name= new_index_name
+    # )
+
+    # # adding documents into ai search storage
+    # documents = []
+    # directory_path = "/Users/bern/Documents/FYP/[CONFIDENTIAL] Chatlog and test documents/sc1015_documents/"
+    # for file_name in os.listdir(directory_path):
+    #     doc = load_document(directory_path+file_name)
+    #     documents.append(doc)
+
+    # kb.add_or_update_docs(documents=documents, index_name=new_index_name)
+
+    # query index
+    # Defines retriever used
+    search_client = SearchClient(
+        endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
+        index_name="fyp-sc1015",
+        credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
+    )
+
+    query = "What is happening at each academic week?"
+    documents = list(search_client.search(query))
+    contexts = []
+    sources = []
+    for doc in documents[:3]:
+        pprint.pprint(doc)
+        print("-------")
+        # contexts.append(doc["content"])
+        # sources.append(doc["filename"])
+        # print(
+        #     f"=====Retriever Info======\nCONTEXTS: {contexts}\nSOURCES {sources}"
+        # )

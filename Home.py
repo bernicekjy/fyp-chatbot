@@ -1,7 +1,8 @@
 import streamlit as st
-import os 
+import os
 from dotenv import load_dotenv
 from Narelle import Narelle
+import pprint
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -19,10 +20,14 @@ st.write(f"For queries related to {os.environ.get('COURSE_NAME')}")
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
-    
-chat_avatars = {"ai":"imgs/ai_avatar.jpg", 
-                "user": {"Male":"imgs/male_user_avatar.jpg",
-                         "Female":"imgs/female_user_avatar.jpg"}}
+
+chat_avatars = {
+    "ai": "imgs/ai_avatar.jpg",
+    "user": {
+        "Male": "imgs/male_user_avatar.jpg",
+        "Female": "imgs/female_user_avatar.jpg",
+    },
+}
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
@@ -34,6 +39,9 @@ if prompt := st.chat_input("Ask Narelle a question..."):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
+    # update backend's chat history
+    chatbot.set_chat_history(chat_history=st.session_state.messages)
+
     # Display user message in chat message container
     with st.chat_message("user"):
         st.write(prompt)
@@ -41,9 +49,13 @@ if prompt := st.chat_input("Ask Narelle a question..."):
     # Display chatbot message
     with st.chat_message("assistant"):
         response = chatbot.answer_this(query=prompt)
-        
+
         st.write(response)
 
     st.session_state.messages.append({"role": "assistant", "content": response})
-    
 
+    # update backend's chat history
+    chatbot.set_chat_history(chat_history=st.session_state.messages)
+
+    print("++++++Message history++++++++++++")
+    pprint.pprint(st.session_state.messages)

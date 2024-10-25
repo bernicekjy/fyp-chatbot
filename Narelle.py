@@ -1,9 +1,9 @@
-
 from azure.search.documents import SearchClient
 import os
 from azure.core.credentials import AzureKeyCredential
-import pprint
 from langchain_openai import AzureChatOpenAI
+from typing import List
+from langchain.callbacks import get_openai_callback
 
 # ----DEFAULT CONFIGS-----
 course_name = "SC1015 Data Science and Artificial Intelligence"
@@ -29,7 +29,7 @@ class Narelle:
         # Defines retriever used
         self.search_client = SearchClient(
             endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-            index_name="index1",
+            index_name="fyp-sc1015",
             credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
         )
 
@@ -50,30 +50,66 @@ class Narelle:
             f"course coordinator or instructors (smitha@ntu.edu.sg | chinann.ong@ntu.edu.sg). "
         )
 
+        self.chat_history = []
+
+        self.total_api_cost = 0
+        self.total_api_tokens = 0
+
     def get_context(self, query, k=5):
         contexts = []
         sources = []
 
-        documents = self.search_client.search(query)
+        documents = self.search_client.search(query, top=k)
         for doc in documents:
             # pprint.pprint(doc)
             # print("-------")
             contexts.append(doc["content"])
             sources.append(doc["filename"])
-        pprint.pprint(
-            f"=====Retriever Info======\nCONTEXTS: {contexts}\nSOURCES {sources}"
-        )
+        # pprint.pprint(
+        #     f"=====Retriever Info======\nCONTEXTS: {contexts}\nSOURCES {sources}"
+        # )
         return contexts, list(set(sources))
 
-    def answer_this(self, query):
+    def get_total_tokens_cost(self):
+        return {
+            "overall_cost": self.total_api_cost,
+            "overall_tokens": self.total_api_tokens,
+        }
+
+    def answer_this(self, query, num_chat_history=6):
         # get context
         context, sources = self.get_context(query=query)
 
-        response = self.llm.invoke(
-            self.sysmsg + "\nContext: " + " ".join(context) + "\nQuery: " + query
-        )
+        # extract top few chats
+        latest_chat_history = self.chat_history
+
+        if len(latest_chat_history) > num_chat_history:
+            latest_chat_history = self.chat_history[(num_chat_history * -1) :]
+
+        print("latest chat history: ", latest_chat_history)
+
+        # compose complete prompt (with history)
+        full_prompt = self.sysmsg + "Chat History: "+str(latest_chat_history) + "\nContext: "+str(context)+ "\nQuery: " + query
+
+        # # compose complete prompt (WITHOUT history)
+        # full_prompt = self.sysmsg + "\nContext: " + str(context) + "\nQuery: " + query
+
+        print("FULL PROMPT: ", full_prompt)
+
+        # print("\n\nchat_history: ", latest_chat_history)
+
+        # invoke LLM
+        with get_openai_callback() as cb:
+            response = self.llm.invoke(full_prompt)
+
+            print(
+                f"=======[COST] total cost: {cb.total_cost}; total tokens: {cb.total_tokens}"
+            )
 
         return response.content
+
+    def set_chat_history(self, chat_history: List[str]):
+        self.chat_history = chat_history
 
 
 if __name__ == "__main__":
