@@ -1,0 +1,4 @@
+.idea/
+.ruff_cache
+
+test_results/

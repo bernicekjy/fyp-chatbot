@@ -86,7 +86,7 @@ class Narelle:
         if len(latest_chat_history) > num_chat_history:
             latest_chat_history = self.chat_history[(num_chat_history * -1) :]
 
-        print("latest chat history: ", latest_chat_history)
+        # print("latest chat history: ", latest_chat_history)
 
         # compose complete prompt (with history)
         full_prompt = self.sysmsg + "Chat History: "+str(latest_chat_history) + "\nContext: "+str(context)+ "\nQuery: " + query
@@ -94,7 +94,7 @@ class Narelle:
         # # compose complete prompt (WITHOUT history)
         # full_prompt = self.sysmsg + "\nContext: " + str(context) + "\nQuery: " + query
 
-        print("FULL PROMPT: ", full_prompt)
+        # print("FULL PROMPT: ", full_prompt)
 
         # print("\n\nchat_history: ", latest_chat_history)
 
@@ -102,14 +102,20 @@ class Narelle:
         with get_openai_callback() as cb:
             response = self.llm.invoke(full_prompt)
 
-            print(
-                f"=======[COST] total cost: {cb.total_cost}; total tokens: {cb.total_tokens}"
-            )
+            # print(
+            #     f"=======[COST] total cost: {cb.total_cost}; total tokens: {cb.total_tokens}"
+            # )
 
-        return response.content
+            total_cost = cb.total_cost
+            total_tokens = cb.total_tokens
+
+        return {"chatbot_response":response.content, "context":context, "cost":total_cost, "tokens":total_tokens}
 
     def set_chat_history(self, chat_history: List[str]):
         self.chat_history = chat_history
+
+    def clear_chat_history(self):
+        self.chat_history = []
 
 
 if __name__ == "__main__":
