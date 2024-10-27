@@ -48,7 +48,7 @@ if prompt := st.chat_input("Ask Narelle a question..."):
 
     # Display chatbot message
     with st.chat_message("assistant"):
-        response = chatbot.answer_this(query=prompt)
+        response = chatbot.answer_this(query=prompt)["chatbot_response"]
 
         st.write(response)
 

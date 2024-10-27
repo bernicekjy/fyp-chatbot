@@ -139,7 +139,7 @@ class KnowledgeBaseManager:
                 split_docs = self.text_splitter.split_documents([doc])
 
                 if search_results:
-                    print("update!")
+
                     docs_to_update_id = [result["id"] for result in search_results]
                     docs_to_update_page_content = [
                         sdoc.page_content for sdoc in split_docs
@@ -176,7 +176,7 @@ class KnowledgeBaseManager:
                             }
                         )
 
-                    print(f"added {file_name}!")
+                    print(f"added {filename}!")
 
             if docs_to_update_final:
                 search_client.merge_documents(docs_to_update_final)
@@ -256,39 +256,41 @@ def load_document(file_path: str):
 
 if __name__ == "__main__":
     kb = KnowledgeBaseManager()
-    new_index_name = "fyp-sc1015"
+    new_index_name = "fyp-sc1015-without-faqs"
 
-    # # creating index
-    # kb.create_index(
-    #     index_name= new_index_name
-    # )
-
-    # # adding documents into ai search storage
-    # documents = []
-    # directory_path = "/Users/bern/Documents/FYP/[CONFIDENTIAL] Chatlog and test documents/sc1015_documents/"
-    # for file_name in os.listdir(directory_path):
-    #     doc = load_document(directory_path+file_name)
-    #     documents.append(doc)
-
-    # kb.add_or_update_docs(documents=documents, index_name=new_index_name)
-
-    # query index
-    # Defines retriever used
-    search_client = SearchClient(
-        endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-        index_name="fyp-sc1015",
-        credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
+    # creating index
+    kb.create_index(
+        index_name= new_index_name
     )
 
-    query = "What is happening at each academic week?"
-    documents = list(search_client.search(query))
-    contexts = []
-    sources = []
-    for doc in documents[:3]:
-        pprint.pprint(doc)
-        print("-------")
-        # contexts.append(doc["content"])
-        # sources.append(doc["filename"])
-        # print(
-        #     f"=====Retriever Info======\nCONTEXTS: {contexts}\nSOURCES {sources}"
-        # )
+    # adding documents into ai search storage
+    documents = []
+    directory_path = "/Users/bern/Documents/FYP/[CONFIDENTIAL] Chatlog and test documents/sc1015_documents/Without FAQS/"
+    for file_name in os.listdir(directory_path):
+        if not file_name.startswith(("~",".")):
+            print("at ", directory_path+file_name)
+            doc = load_document(directory_path+file_name)
+            documents.append(doc)
+
+    kb.add_or_update_docs(documents=documents, index_name=new_index_name)
+
+    # # query index
+    # # Defines retriever used
+    # search_client = SearchClient(
+    #     endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
+    #     index_name="fyp-sc1015",
+    #     credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
+    # )
+
+    # query = "What is happening at each academic week?"
+    # documents = list(search_client.search(query))
+    # contexts = []
+    # sources = []
+    # for doc in documents[:3]:
+    #     pprint.pprint(doc)
+    #     print("-------")
+    #     # contexts.append(doc["content"])
+    #     # sources.append(doc["filename"])
+    #     # print(
+    #     #     f"=====Retriever Info======\nCONTEXTS: {contexts}\nSOURCES {sources}"
+    #     # )
