@@ -136,7 +136,11 @@ class KnowledgeBaseManager:
                     search_client.search(filter=f"filename eq '{filename}'")
                 )
 
+                # for debugging
+                print("file names: ", search_results)
+
                 split_docs = self.text_splitter.split_documents([doc])
+                
 
                 if search_results:
 
@@ -148,7 +152,21 @@ class KnowledgeBaseManager:
                         docs_to_update_page_content
                     )  # [[0.001,0.003], [0.002, 0.005]]
 
+                    # print("checkpoint")
+                    # print("docs_to_update_id: ", docs_to_update_id)
+                    # print("docs_to_update_page_content: ", docs_to_update_page_content)
+                    # print("docs_to_update_embeddings: ", docs_to_update_embeddings)
+                    # print("split_docs: ", split_docs)
+                    # print("docs_to_update_final: ", docs_to_update_final)
+
+                    # if new document requires more chunks
+                    # TODO: figure out how to overcome this error
+                    if len(docs_to_update_id) < len(split_docs):
+                        print("creating new chunks for docs")        
+                        return False
+                                
                     for i, sdoc in enumerate(split_docs):
+                        print(f"i: {i}; sdoc: {sdoc}")
                         docs_to_update_final.append(
                             {
                                 "id": docs_to_update_id[i],
@@ -158,6 +176,7 @@ class KnowledgeBaseManager:
                             }
                         )
 
+                    print(f"updated {filename}!")
                 else:
                     docs_to_add_page_content = [
                         sdoc.page_content for sdoc in split_docs
@@ -258,10 +277,10 @@ if __name__ == "__main__":
     kb = KnowledgeBaseManager()
     new_index_name = "fyp-sc1015-without-faqs"
 
-    # creating index
-    kb.create_index(
-        index_name= new_index_name
-    )
+    # # creating index
+    # kb.create_index(
+    #     index_name= new_index_name
+    # )
 
     # adding documents into ai search storage
     documents = []

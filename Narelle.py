@@ -30,7 +30,7 @@ class Narelle:
         # Defines retriever used
         self.search_client = SearchClient(
             endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-            index_name="fyp-sc1015-without-faqs",
+            index_name="fyp-sc1015-with-faqs",
             credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
         )
 
@@ -64,7 +64,7 @@ class Narelle:
             f"MCQ questions with the answer based on the textbook, 'Artificial Intelligence: A Modern Approach ("
             f"3rd edition)' from Chapter 1, 2, 3, 4, and 6. Lastly, remember today is {now} in the format of "
             f"YYYY-MM-DD.\n\nIf you are unsure how to respond to a query based on the course information "
-            f"provided, respond with ONLY 'QUERY_INSTRUCTOR' and the question will be directed to the instructor"
+            f"provided, respond with ONLY 'QUERY_INSTRUCTOR' and the question will be directed to the instructor."
         )
 
         self.chat_history = []
@@ -205,6 +205,8 @@ class Narelle:
         # get context
         context, sources = self.get_context(query=query)
 
+        context_string = "\n".join(context)
+
         # extract top few chats
         latest_chat_history = self.get_latest_chat_history(
             num_chat_history=num_chat_history
@@ -218,7 +220,7 @@ class Narelle:
             + "Chat History: "
             + str(latest_chat_history)
             + "\nContext: "
-            + str(context)
+            + context_string
             + "\nQuery: "
             + query
         )
@@ -229,6 +231,9 @@ class Narelle:
         # print("FULL PROMPT: ", full_prompt)
 
         # print("\n\nchat_history: ", latest_chat_history)
+
+        # print context
+        print("==context==\n"+context_string)
 
         # invoke LLM
         with get_openai_callback() as cb:
@@ -243,7 +248,7 @@ class Narelle:
 
         return {
             "chatbot_response": response.content,
-            "context": context,
+            "context": context_string,
             "cost": total_cost,
             "tokens": total_tokens,
         }
