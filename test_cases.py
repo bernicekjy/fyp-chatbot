@@ -63,5 +63,5 @@ faq_questions = [
     "Will the Review Lectures be recorded?",
 ]
 
-y = [    "What activity happems in Week 3?",
+y = [ "What activity happems in Week 3?",
      "What is TA Bipin's email?"]
