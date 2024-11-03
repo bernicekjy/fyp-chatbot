@@ -1,4 +1,4 @@
 
 
-Question: Do we need to make-up for a Lab Exercise that we miss?
-Answer: Yes. But you do not need to come to the Lab for this make-up. Just follow the policy set by your Lab TA. In case the lab exercise is not graded, you may simply send the solution to your TA to prove that you could complete it. In case the lab exercise if graded, your Lab TA will provide you with an alternative submission option, and you must submit your solution within a slightly extended deadline (depending on your specific case, but never more than 24 hours). This arrangement will be done by your Lab TA, and thus the submission mechanism (email, online, etc.) may be different for each lab. The policy of "no more than 24 hours" will be consistent across all labs for consistency. Talk to your Lab TA about it when you first meet them at the Lab.
+Question: Will every LAMS sequence have graded embedded quiz?
+Answer: No. There will be some LAMS sequences that do not have any embedded quiz. There will also be some LAMS sequences with embedded questions to think about the content of the lecture, but not graded. This will be clearly stated for each LAMS, so that you know if a LAMS will contribute towards your grade.

@@ -1,5 +1,0 @@
-Question: Will there be a final examination for the course?
-Answer: No. This is a 100% Continuous Assessment (CA) course, which means there is no final examination. Please note the above graded components carefully, and mark your calendar so that you do not miss out on any of the components. The Course Calendar should list each graded component against the respective weeks. The theory quizzes will be held for the entire batch on the same day, but the Lab Exercises will be held during your respective Lab Sessions across the marked weeks.
-
-Question: What is the Grading Scheme for the Mini-Project?
-Answer: 10% for coming up with your own problem definition based on a dataset
