@@ -20,6 +20,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from langchain_community.document_loaders import TextLoader
 import pprint
+from kb.utils import load_document
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -27,6 +28,7 @@ load_dotenv()
 
 class KnowledgeBaseManager:
     def __init__(self):
+
         # Defines the instance of AzureOpenAIEmbedding class
         self.embeddings = AzureOpenAIEmbeddings(
             azure_deployment=os.environ.get("TEXT_EMBEDDING_MODEL_DEPLOYMENT"),
@@ -42,6 +44,7 @@ class KnowledgeBaseManager:
 
         # Defines instance of CharacterTextSplitter class with chunk size of 1500 and chunk overlap of 500
         self.text_splitter = CharacterTextSplitter(chunk_size=1500, chunk_overlap=500)
+
 
     def create_index(self, index_name):  # for course
         try:
@@ -107,6 +110,9 @@ class KnowledgeBaseManager:
                 name=index_name, fields=fields, vector_search=vector_search
             )
             search_index_client.create_or_update_index(index=searchindex)
+
+            # Update class attribute
+            self.index_name = index_name
             return index_name
         except Exception as e:
             return e
@@ -151,6 +157,7 @@ class KnowledgeBaseManager:
                     docs_to_update_embeddings = self.embeddings.embed_documents(
                         docs_to_update_page_content
                     )  # [[0.001,0.003], [0.002, 0.005]]
+                    num_existing_docs = len(search_results)
 
                     # print("checkpoint")
                     # print("docs_to_update_id: ", docs_to_update_id)
@@ -159,13 +166,8 @@ class KnowledgeBaseManager:
                     # print("split_docs: ", split_docs)
                     # print("docs_to_update_final: ", docs_to_update_final)
 
-                    # if new document requires more chunks
-                    # TODO: figure out how to overcome this error
-                    if len(docs_to_update_id) < len(split_docs):
-                        print("creating new chunks for docs")        
-                        return False
-                                
-                    for i, sdoc in enumerate(split_docs):
+                     
+                    for i, sdoc in enumerate(split_docs[:num_existing_docs]):
                         print(f"i: {i}; sdoc: {sdoc}")
                         docs_to_update_final.append(
                             {
@@ -175,6 +177,21 @@ class KnowledgeBaseManager:
                                 "filename": filename,
                             }
                         )
+
+                    # if updated document requires more chunks of docs to be stored, add them
+                    if len(split_docs) > num_existing_docs:
+                        print("creating new docs")
+
+                        for i, sdoc in enumerate(split_docs[num_existing_docs:]):
+                            print("adding chunk ", i+num_existing_docs)
+                            docs_to_add_final.append(
+                                {
+                                    "id": str(uuid.uuid4()),
+                                    "content": sdoc.page_content,
+                                    "content_vector": docs_to_update_embeddings[i+num_existing_docs],
+                                    "filename": filename,
+                                }
+                            )
 
                     print(f"updated {filename}!")
                 else:
@@ -247,30 +264,22 @@ class KnowledgeBaseManager:
             print(f"An error occurred: {e}")
             return False
 
+    def update_qna_document(self, question, answer, index_name):
+    
+        # content to add to document
+        content = f"\n\nQuestion: {question}\nAnswer: {answer}"
 
-def load_document(file_path: str):
-    # Loads the document from the local directory
+        # write to document
+        # temporary solution -> write to a local txt file and upload the local txt file
+        # TODO: think of a better storage method
+        f = open(self.qna_document, "a")
+        f.write(content)
+        f.close()
 
-    if file_path.endswith(".pdf"):
-        # Load PDF files using PyPDFLoader
-        loader = PyPDFLoader(file_path)
-        docs = loader.load()
-    elif file_path.endswith(".docx"):
-        # Load DOCX files using Docx2txtLoader
-        loader = Docx2txtLoader(file_path)
-        docs = loader.load()
-    elif file_path.endswith(".csv"):
-        # Load CSV files with CSVLoader
-        loader = CSVLoader(file_path)
-        docs = loader.load()
-    else:
-        # if unidentified file type, use unstructured loader
-        loader = TextLoader(file_path)
-        docs = loader.load()
-
-    print(f"loaded {file_path}")
-
-    return docs[0]
+        # add to index
+        # temporary solution -> upload updated txt file
+        doc = load_document(self.qna_document)
+        kb.add_or_update_docs(documents=[doc], index_name=index_name)
 
 
 if __name__ == "__main__":

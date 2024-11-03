@@ -5,6 +5,7 @@ from langchain_openai import AzureChatOpenAI
 from typing import List
 from langchain.callbacks import get_openai_callback
 from datetime import datetime
+from kb.AN_RL_KnowledgeBase import RLKnowledgeBaseManager
 
 # ----DEFAULT CONFIGS-----
 course_name = "SC1015 Data Science and Artificial Intelligence"
@@ -30,7 +31,7 @@ class Narelle:
         # Defines retriever used
         self.search_client = SearchClient(
             endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-            index_name="fyp-sc1015-with-faqs",
+            index_name="fyp-sc1015-without-faqs",
             credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
         )
 
@@ -68,6 +69,8 @@ class Narelle:
         )
 
         self.chat_history = []
+
+        self.kb = RLKnowledgeBaseManager()
 
         self.total_api_cost = 0
         self.total_api_tokens = 0
@@ -212,8 +215,6 @@ class Narelle:
             num_chat_history=num_chat_history
         )
 
-        # print("latest chat history: ", latest_chat_history)
-
         # compose complete prompt (with history)
         full_prompt = (
             self.sysmsg_temp
@@ -224,13 +225,6 @@ class Narelle:
             + "\nQuery: "
             + query
         )
-
-        # # compose complete prompt (WITHOUT history)
-        # full_prompt = self.sysmsg + "\nContext: " + str(context) + "\nQuery: " + query
-
-        # print("FULL PROMPT: ", full_prompt)
-
-        # print("\n\nchat_history: ", latest_chat_history)
 
         # print context
         print("==context==\n"+context_string)
@@ -245,14 +239,28 @@ class Narelle:
 
             total_cost = cb.total_cost
             total_tokens = cb.total_tokens
+        
+        chatbot_response = response.content
+
+        # if non-trivial question, query instructor
+        if "QUERY_INSTRUCTOR" in chatbot_response:
+
+            # chatbot response upon non-trivial question
+            chatbot_response = "Sorry, I am unable to answer your question. I have forwarded your question to your course instructor."
+
+            # add question to unanswered questions
+            self.kb.add_unanswered_question(new_question=query)
+            
+
 
         return {
-            "chatbot_response": response.content,
+            "chatbot_response": chatbot_response,
             "context": context_string,
             "cost": total_cost,
             "tokens": total_tokens,
         }
-
+    
+    
 
 if __name__ == "__main__":
     bot = Narelle()

@@ -1,0 +1,4 @@
+
+
+Question: Do we need to make-up for a Lab Exercise that we miss?
+Answer: Yes. But you do not need to come to the Lab for this make-up. Just follow the policy set by your Lab TA. In case the lab exercise is not graded, you may simply send the solution to your TA to prove that you could complete it. In case the lab exercise if graded, your Lab TA will provide you with an alternative submission option, and you must submit your solution within a slightly extended deadline (depending on your specific case, but never more than 24 hours). This arrangement will be done by your Lab TA, and thus the submission mechanism (email, online, etc.) may be different for each lab. The policy of "no more than 24 hours" will be consistent across all labs for consistency. Talk to your Lab TA about it when you first meet them at the Lab.
