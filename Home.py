@@ -57,5 +57,3 @@ if prompt := st.chat_input("Ask Narelle a question..."):
     # update backend's chat history
     chatbot.set_chat_history(chat_history=st.session_state.messages)
 
-    print("++++++Message history++++++++++++")
-    pprint.pprint(st.session_state.messages)

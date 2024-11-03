@@ -142,9 +142,6 @@ class KnowledgeBaseManager:
                     search_client.search(filter=f"filename eq '{filename}'")
                 )
 
-                # for debugging
-                print("file names: ", search_results)
-
                 split_docs = self.text_splitter.split_documents([doc])
                 
 
@@ -159,16 +156,8 @@ class KnowledgeBaseManager:
                     )  # [[0.001,0.003], [0.002, 0.005]]
                     num_existing_docs = len(search_results)
 
-                    # print("checkpoint")
-                    # print("docs_to_update_id: ", docs_to_update_id)
-                    # print("docs_to_update_page_content: ", docs_to_update_page_content)
-                    # print("docs_to_update_embeddings: ", docs_to_update_embeddings)
-                    # print("split_docs: ", split_docs)
-                    # print("docs_to_update_final: ", docs_to_update_final)
-
                      
                     for i, sdoc in enumerate(split_docs[:num_existing_docs]):
-                        print(f"i: {i}; sdoc: {sdoc}")
                         docs_to_update_final.append(
                             {
                                 "id": docs_to_update_id[i],
@@ -180,10 +169,9 @@ class KnowledgeBaseManager:
 
                     # if updated document requires more chunks of docs to be stored, add them
                     if len(split_docs) > num_existing_docs:
-                        print("creating new docs")
 
                         for i, sdoc in enumerate(split_docs[num_existing_docs:]):
-                            print("adding chunk ", i+num_existing_docs)
+
                             docs_to_add_final.append(
                                 {
                                     "id": str(uuid.uuid4()),

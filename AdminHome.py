@@ -48,12 +48,9 @@ st.session_state["updated_df"] = st.data_editor(st.session_state["initial_df"], 
 # st.write("st.session_state['updated_df']: ",st.session_state['updated_df'])
 
 if st.button("Update Knowledge Base"):
-    # print('st.session_state["qna_list"]: ', st.session_state["qna_list"])
 
     edited_rows = st.session_state["qna_list"]["edited_rows"]
-    print("edited_rows: ", edited_rows)
 
-    print("st.session_state['updated_df']: ", st.session_state["updated_df"])
 
     # update knowledge base
     if len(edited_rows)>0:
@@ -61,11 +58,8 @@ if st.button("Update Knowledge Base"):
         
         # drop rows in admin page
         # rows_to_drop = list(st.session_state["qna_list"]["edited_rows"].keys())
-        # print("rows_to_drop: ", rows_to_drop)
         # st.session_state["initial_df"].drop(rows_to_drop, inplace=True)
         # print("dropped!")
-
-        # print("st.session_state['initial_df']: ", st.session_state["initial_df"])
 
         # update each edited row
         for row_num in list(st.session_state["qna_list"]["edited_rows"].keys()):

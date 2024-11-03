@@ -208,7 +208,7 @@ class Narelle:
         # get context
         context, sources = self.get_context(query=query)
 
-        context_string = "\n".join(context)
+        context_string = "\n\n---------------\n".join(context)
 
         # extract top few chats
         latest_chat_history = self.get_latest_chat_history(
@@ -218,8 +218,8 @@ class Narelle:
         # compose complete prompt (with history)
         full_prompt = (
             self.sysmsg_temp
-            + "Chat History: "
-            + str(latest_chat_history)
+            # + "Chat History: "
+            # + str(latest_chat_history)
             + "\nContext: "
             + context_string
             + "\nQuery: "
@@ -227,7 +227,7 @@ class Narelle:
         )
 
         # print context
-        print("==context==\n"+context_string)
+        print("\n\n===== CONTEXT FOR QUERY '"+query+"' =====\n\n"+context_string+"\n===================\n\n")
 
         # invoke LLM
         with get_openai_callback() as cb:
