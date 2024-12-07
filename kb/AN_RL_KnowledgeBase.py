@@ -1,6 +1,14 @@
 from kb.AN_KnowledgeBase import KnowledgeBaseManager
 from kb.utils import load_document
+import pymongo
+import sys
 import json
+import os
+from dotenv import load_dotenv
+from datetime import datetime
+
+# Load environment variables from the .env file
+load_dotenv()
 
 class RLKnowledgeBaseManager(KnowledgeBaseManager):
     def __init__(self):
@@ -9,8 +17,32 @@ class RLKnowledgeBaseManager(KnowledgeBaseManager):
         # Name of QnA document
         self.qna_document = "db/asknarelle_qna.txt"
 
-        # List of unanswered questions
-        self.unanswered_questions_file = "db/unanswered_questions.json"
+        # Connect to question database
+        # Get MongoDB Atlas connection string
+        atlas_connection_str = os.environ.get("ATLAS_CONNECTION_STR")
+        
+        try:
+            client = pymongo.MongoClient(atlas_connection_str)
+            # return a friendly error if a URI error is thrown 
+        except pymongo.errors.ConfigurationError:
+            print("An Invalid URI host error was received. Is your Atlas host name correct in your connection string?")
+            sys.exit(1)
+        
+        # use a database named "qnaDatabase"
+        db = client.qnaDatabase
+
+        # use a collection named "questions"
+        self.questions_collection = db["questions"]
+        
+
+    def initialise_collection(self):
+        # drop the collection in case it already exists
+        try:
+            self.questions_collection.drop()
+        # return a friendly error if an authentication error is thrown
+        except pymongo.errors.OperationFailure:
+            print("An authentication error was received. Are your username and password correct in your connection string?")
+            sys.exit(1)
 
     def update_qna_document(self, question, answer, index_name):
         # content to add to document
@@ -26,42 +58,36 @@ class RLKnowledgeBaseManager(KnowledgeBaseManager):
         super().add_or_update_docs(documents=[doc], index_name=index_name)
 
     def add_unanswered_question(self, new_question):
-        # open JSON file consisting of unanswered questions
-        with open(self.unanswered_questions_file, "r") as jsonFile:
-            data = json.load(jsonFile)
 
-        data.append({"question": new_question, "answer": ""})
-
-        # write updated data to JSON file
-        with open(self.unanswered_questions_file, "w") as jsonFile:
-            json.dump(data, jsonFile)
+        self.questions_collection.insert_one({"question": new_question, "answer": ""})
 
         return True
     
+    def add_answer_to_question(self, question, answer):
+        new_doc = self.questions_collection.find_one_and_update({"question": question}, {"$set": { "answer": answer }}, new=True)
+
+        if new_doc is not None: # return True if question found and updated
+            return True
+        else: # return False if question not found
+            return False
+
+
     def delete_unanswered_question(self, question_to_delete):
-        fileDeleted = False
-
-        # open JSON file consisting of unanswered questions
-        with open(self.unanswered_questions_file, "r") as jsonFile:
-            data = json.load(jsonFile)
-
-        # delete question
-        for i, row in enumerate(data):
-
-            if row["question"]==question_to_delete:
-                data.pop(i)
-                fileDeleted = True
-                break
-
-        # write updated data to JSON file
-        with open(self.unanswered_questions_file, "w") as jsonFile:
-            json.dump(data, jsonFile)
+        # delete documents with the question as question_to_delete
+        deletion_result = self.questions_collection.delete_one({"question":question_to_delete})
         
-        return fileDeleted
+        return deletion_result
     
     def get_unanswered_questions(self):
-        # open JSON file consisting of unanswered questions
-        with open(self.unanswered_questions_file, "r") as jsonFile:
-            data = json.load(jsonFile)
+        # find questions with no answer
+        result = self.questions_collection.find({"answer":""})
 
-        return data
+        # convert result to Python dict
+        result_dict = []
+        
+        if result:
+            for doc in result:
+                result_dict.append(doc)
+
+        return result_dict
+
