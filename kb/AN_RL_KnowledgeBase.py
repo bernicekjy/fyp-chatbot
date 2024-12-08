@@ -44,7 +44,7 @@ class RLKnowledgeBaseManager(KnowledgeBaseManager):
             print("An authentication error was received. Are your username and password correct in your connection string?")
             sys.exit(1)
 
-    def update_qna_document(self, question, answer, index_name):
+    def update_txt_qna_document(self, question, answer, index_name):
         # content to add to document
         content = f"\n\nQuestion: {question}\nAnswer: {answer}"
 
@@ -56,6 +56,25 @@ class RLKnowledgeBaseManager(KnowledgeBaseManager):
         # add to index
         doc = load_document(self.qna_document)
         super().add_or_update_docs(documents=[doc], index_name=index_name)
+
+    def generate_qna_str(self):
+        # find all questions that have been answered
+        result = self.questions_collection.find({"answer":{"$ne":""}})
+
+        # convert result to Python dict
+        result_str = ""
+        
+        if result:
+            for doc in result:
+                # get question and answer
+                question = doc["question"]
+                answer = doc["answer"]
+
+                # add qna pair to result_str
+                result_str += f"Question: {question}\nAnswer: {answer}\n\n"
+
+        return result_str
+
 
     def add_unanswered_question(self, new_question):
 
