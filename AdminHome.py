@@ -54,19 +54,13 @@ if st.button("Update Knowledge Base"):
 
     # update knowledge base
     if len(edited_rows)>0:
-        # update edited rows
-        
-        # drop rows in admin page
-        # rows_to_drop = list(st.session_state["qna_list"]["edited_rows"].keys())
-        # st.session_state["initial_df"].drop(rows_to_drop, inplace=True)
-        # print("dropped!")
 
         # update each edited row
         for row_num in list(st.session_state["qna_list"]["edited_rows"].keys()):
             row_to_update = st.session_state['updated_df'][row_num]
             
             # update document
-            kb.update_qna_document(question=row_to_update['question'], answer=row_to_update['answer'], index_name="fyp-sc1015-without-faqs")
+            kb.update_txt_qna_document(question=row_to_update['question'], answer=row_to_update['answer'], index_name="fyp-sc1015-without-faqs")
 
             # delete question from list of unanswered questions
             kb.delete_unanswered_question(question_to_delete=row_to_update['question'])
