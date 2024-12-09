@@ -1,7 +1,9 @@
 import streamlit as st
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 from dotenv import load_dotenv
-from Narelle import Narelle
+from chatbot.Narelle import Narelle
 import pprint
 
 # Load environment variables from the .env file

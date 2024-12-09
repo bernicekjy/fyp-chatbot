@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 import os
 from dotenv import load_dotenv
-from Narelle import Narelle
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 from kb.AN_RL_KnowledgeBase import RLKnowledgeBaseManager
 import pprint
 
@@ -59,11 +60,12 @@ if st.button("Update Knowledge Base"):
         for row_num in list(st.session_state["qna_list"]["edited_rows"].keys()):
             row_to_update = st.session_state['updated_df'][row_num]
             
+        
             # update document
-            kb.update_txt_qna_document(question=row_to_update['question'], answer=row_to_update['answer'], index_name="fyp-sc1015-without-faqs")
+            kb.add_answer_to_question(question=row_to_update['question'], answer=row_to_update['answer'])
 
-            # delete question from list of unanswered questions
-            kb.delete_unanswered_question(question_to_delete=row_to_update['question'])
+            # generate a new qna document and update kb
+            kb.update_qna_document(index_name="fyp-sc1015-without-faqs")
 
     
 

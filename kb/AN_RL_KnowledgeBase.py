@@ -6,6 +6,8 @@ import json
 import os
 from dotenv import load_dotenv
 from datetime import datetime
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -19,10 +21,10 @@ class RLKnowledgeBaseManager(KnowledgeBaseManager):
 
         # Connect to question database
         # Get MongoDB Atlas connection string
-        atlas_connection_str = os.environ.get("ATLAS_CONNECTION_STR")
+        db_connection_str = os.environ.get("AZURE_COSMOSDB_CONNECTION_STR")
         
         try:
-            client = pymongo.MongoClient(atlas_connection_str)
+            client = pymongo.MongoClient(db_connection_str)
             # return a friendly error if a URI error is thrown 
         except pymongo.errors.ConfigurationError:
             print("An Invalid URI host error was received. Is your Atlas host name correct in your connection string?")
@@ -44,14 +46,14 @@ class RLKnowledgeBaseManager(KnowledgeBaseManager):
             print("An authentication error was received. Are your username and password correct in your connection string?")
             sys.exit(1)
 
-    def update_txt_qna_document(self, question, answer, index_name):
-        # content to add to document
-        content = f"\n\nQuestion: {question}\nAnswer: {answer}"
+    def update_qna_document(self, index_name):
+        # content of qna document
+        content = self.generate_qna_str()
+        print("Content: ", content)
 
         # write to document
-        f = open(self.qna_document, "a")
-        f.write(content)
-        f.close()
+        with open(self.qna_document, "w") as file:
+            file.write(content)
 
         # add to index
         doc = load_document(self.qna_document)

@@ -252,23 +252,6 @@ class KnowledgeBaseManager:
             print(f"An error occurred: {e}")
             return False
 
-    def update_qna_document(self, question, answer, index_name):
-    
-        # content to add to document
-        content = f"\n\nQuestion: {question}\nAnswer: {answer}"
-
-        # write to document
-        # temporary solution -> write to a local txt file and upload the local txt file
-        # TODO: think of a better storage method
-        f = open(self.qna_document, "a")
-        f.write(content)
-        f.close()
-
-        # add to index
-        # temporary solution -> upload updated txt file
-        doc = load_document(self.qna_document)
-        kb.add_or_update_docs(documents=[doc], index_name=index_name)
-
 
 if __name__ == "__main__":
     kb = KnowledgeBaseManager()
