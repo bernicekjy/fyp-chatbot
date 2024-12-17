@@ -1,8 +1,23 @@
 #  questions that trigger QUERY_INSTRUCTOR
 non_trivial_questions = [
 "When was this module created?",
-"Will the Lab TAs teach new topics during the Lab Sessions",
+# "Will the Lab TAs teach new topics during the Lab Sessions",
+"Will there be a final examination for the course?",
+"Why all the LAMS sequences are posted together, and not released per week?",
+"Will every LAMS sequence have graded embedded quiz?",
+"Will the LAMS quizzes be single-try or multiple-try questions?",
+"Will the LAMS embedded quizzes be available after the deadline?",
+"Can I sit with my acquaintance at the Lab?",
+"Will the Lab TAs teach new topics during the Lab Sessions?",
+"Do we need to make-up for a Lab Exercise that we miss?",
+"Do we need to make-up for a Lab Exercise that we miss?",
+"What if my teammates assess me unfairly for the project even if I contribute?",
+"What is the Grading Scheme for the Mini-Project?",
+"What is an 'interesting problem' based on the dataset for the mini project?",
+"What do you mean by 'data preparation and cleaning' for the mini project?",
 ]
+
+
 
 # questions that are wrongly answered by chatbot
 wrongly_answered_questions = [
@@ -62,6 +77,3 @@ faq_questions = [
     "Is there any mark for Class Participation, like asking good questions?",
     "Will the Review Lectures be recorded?",
 ]
-
-y = [ "What activity happems in Week 3?",
-     "What is TA Bipin's email?"]

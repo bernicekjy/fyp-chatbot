@@ -1,4 +1,6 @@
+Question: Will the Lab TAs teach new topics during the Lab Sessions
+Answer: No. There will be no formal lecture or teaching during the Lab Sessions. The main course material is just the LAMS sequences, videos and respective slides. The labs are meant for hands-on programming, and the codes that you work on will be tested through the Lab Exercises. However, your Lab TAs may introduce you to some new material every week while they recap the main ideas behind the respective Lab Exercise. These will not be examinable.
 
+Question: Can I email the school to S/U this course?
+Answer: Yes, you may email abc@gmail.com
 
-Question: Will every LAMS sequence have graded embedded quiz?
-Answer: No. There will be some LAMS sequences that do not have any embedded quiz. There will also be some LAMS sequences with embedded questions to think about the content of the lecture, but not graded. This will be clearly stated for each LAMS, so that you know if a LAMS will contribute towards your grade.
