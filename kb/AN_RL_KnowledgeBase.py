@@ -17,11 +17,11 @@ class RLKnowledgeBaseManager(KnowledgeBaseManager):
         super().__init__()
     
         # Name of QnA document
-        self.qna_document = "db/asknarelle_qna.txt"
+        self.qna_document = "/Users/bern/Documents/GitHub/fyp-chatbot/db/asknarelle_qna.txt"
 
         # Connect to question database
         # Get MongoDB Atlas connection string
-        db_connection_str = os.environ.get("AZURE_COSMOSDB_CONNECTION_STR")
+        db_connection_str = os.environ.get("ATLAS_CONNECTION_STR")
         
         try:
             client = pymongo.MongoClient(db_connection_str)
@@ -80,18 +80,26 @@ class RLKnowledgeBaseManager(KnowledgeBaseManager):
 
     def add_unanswered_question(self, new_question):
 
-        self.questions_collection.insert_one({"question": new_question, "answer": ""})
+        self.questions_collection.insert_one({"question": new_question, "answer": "", "status": "unanswered"})
 
         return True
     
     def add_answer_to_question(self, question, answer):
-        new_doc = self.questions_collection.find_one_and_update({"question": question}, {"$set": { "answer": answer }}, new=True)
+        new_doc = self.questions_collection.find_one_and_update({"question": question}, {"$set": { "answer": answer , "status": "answered"}}, new=True)
 
         if new_doc is not None: # return True if question found and updated
             return True
         else: # return False if question not found
             return False
 
+
+    def mark_question_irrelevant(self, question):
+        new_doc = self.questions_collection.find_one_and_update({"question": question}, {"$set": {"status": "irrelevant"}}, new=True)
+
+        if new_doc is not None: # return True if question found and updated
+            return True
+        else: # return False if question not found
+            return False
 
     def delete_unanswered_question(self, question_to_delete):
         # delete documents with the question as question_to_delete
@@ -102,6 +110,32 @@ class RLKnowledgeBaseManager(KnowledgeBaseManager):
     def get_unanswered_questions(self):
         # find questions with no answer
         result = self.questions_collection.find({"answer":""})
+
+        # convert result to Python dict
+        result_dict = []
+        
+        if result:
+            for doc in result:
+                result_dict.append(doc)
+
+        return result_dict
+
+    def get_answered_questions(self):
+        # find all questions that have been answered
+        result = self.questions_collection.find({"answer":{"$ne":""}})
+
+        # convert result to Python dict
+        result_dict = []
+        
+        if result:
+            for doc in result:
+                result_dict.append(doc)
+
+        return result_dict
+
+    def get_all_questions(self):
+        # find all list of questions
+        result = self.questions_collection.find()
 
         # convert result to Python dict
         result_dict = []

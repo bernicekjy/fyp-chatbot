@@ -14,7 +14,7 @@ chatbot = Narelle()
 
 # Set up page
 st.set_page_config(
-    page_title="AskNarelle - Your friendly course assistant", page_icon="🙋‍♀️"
+    page_title="AskNarelle - Your friendly course assistant", page_icon="🙋‍♀️",layout='wide'
 )
 st.title(":woman-raising-hand: Ask Narelle")
 st.write(f"For queries related to {os.environ.get('COURSE_NAME')}")
