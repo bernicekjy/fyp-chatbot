@@ -4,7 +4,6 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 from dotenv import load_dotenv
 from chatbot.Narelle import Narelle
-import pprint
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -38,6 +37,7 @@ for message in st.session_state.messages:
 
 # Accept user input
 if prompt := st.chat_input("Ask Narelle a question..."):
+    
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 

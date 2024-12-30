@@ -1,5 +1,4 @@
 from langchain_openai import AzureOpenAIEmbeddings
-from langchain.document_loaders import PyPDFLoader, Docx2txtLoader, CSVLoader
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
@@ -18,8 +17,6 @@ from azure.search.documents import SearchClient
 import uuid
 from pathlib import Path
 from dotenv import load_dotenv
-from langchain_community.document_loaders import TextLoader
-import pprint
 from kb.utils import load_document
 
 # Load environment variables from the .env file
