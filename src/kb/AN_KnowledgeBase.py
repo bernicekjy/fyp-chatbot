@@ -10,6 +10,8 @@ from azure.search.documents.indexes.models import (
     VectorSearch,
     VectorSearchProfile,
     HnswAlgorithmConfiguration,
+    SearchIndexerDataContainer,
+    SearchIndexerDataSourceConnection
 )
 import os
 from langchain.text_splitter import CharacterTextSplitter
@@ -22,7 +24,7 @@ from kb.utils import load_document
 # Load environment variables from the .env file
 load_dotenv()
 
-
+# TODO: FIX THIS
 class KnowledgeBaseManager:
     def __init__(self):
 
@@ -34,6 +36,13 @@ class KnowledgeBaseManager:
             model=os.environ.get("TEXT_EMBEDDING_MODEL_NAME"),
         )
 
+        # Defines instance of SearchIndexClient class
+        self.search_index_client = SearchIndexClient(
+                endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
+                credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
+            )
+
+        
         # Finds the dimension of the embedding model
         sample_text = "Embeddings dimension finder"
         embedding_vector = self.embeddings.embed_query(sample_text)
@@ -43,22 +52,29 @@ class KnowledgeBaseManager:
         self.text_splitter = CharacterTextSplitter(chunk_size=1500, chunk_overlap=500)
 
 
+
     def create_index(self, index_name):  # for course
-        try:
-            # Defines instance of SearchIndexClient class
-            search_index_client = SearchIndexClient(
-                os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-                AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
-            )
+        try:  
 
             # Defines the structure of the search index
             # TODO: adjust this?
             fields = [
                 # Used for basic indexing
-                SimpleField(
+                SearchableField(
                     name="id",
                     type=SearchFieldDataType.String,
                     key=True,
+                    filterable=True,
+                    retrievable=True,
+                    stored=True,
+                    sortable=False,
+                    facetable=False,
+                    analyzer_name="keyword"
+                ),
+                SimpleField(
+                    name="parentId",
+                    type=SearchFieldDataType.String,
+                    key=False,
                     filterable=True,
                     retrievable=True,
                     stored=True,
@@ -85,7 +101,7 @@ class KnowledgeBaseManager:
                     vector_search_profile_name="my-vector-config",
                 ),
                 SearchableField(
-                    name="filename",
+                    name="title",
                     type=SearchFieldDataType.String,
                     filterable=True,
                     sortable=True,
@@ -106,7 +122,9 @@ class KnowledgeBaseManager:
             searchindex = SearchIndex(
                 name=index_name, fields=fields, vector_search=vector_search
             )
-            search_index_client.create_or_update_index(index=searchindex)
+
+            # Creates the new search index or updates it if it already exists
+            self.search_index_client.create_or_update_index(index=searchindex)
 
             # Update class attribute
             self.index_name = index_name
@@ -115,15 +133,11 @@ class KnowledgeBaseManager:
             return e
 
     def add_or_update_docs(self, documents, index_name):
-        try:
-            search_client = SearchClient(
-                endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-                index_name=index_name,
-                credential=AzureKeyCredential(
-                    os.environ.get("AZURE_AI_SEARCH_API_KEY")
-                ),
-            )
+        # create SearchClient for search function
+        search_client = SearchClient(endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
+                credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),index_name=index_name)
 
+        try:
             # List to store all the docs that need to be added
             docs_to_add_final = []
 
@@ -134,9 +148,10 @@ class KnowledgeBaseManager:
             for doc in documents:
                 filename = Path(doc.metadata["source"]).name
 
+
                 # check if document already exists
                 search_results = list(
-                    search_client.search(filter=f"filename eq '{filename}'")
+                    search_client.search(filter=f"title eq '{filename}'")
                 )
 
                 split_docs = self.text_splitter.split_documents([doc])
@@ -160,7 +175,7 @@ class KnowledgeBaseManager:
                                 "id": docs_to_update_id[i],
                                 "content": sdoc.page_content,
                                 "content_vector": docs_to_update_embeddings[i],
-                                "filename": filename,
+                                "title": filename,
                             }
                         )
 
@@ -174,7 +189,7 @@ class KnowledgeBaseManager:
                                     "id": str(uuid.uuid4()),
                                     "content": sdoc.page_content,
                                     "content_vector": docs_to_update_embeddings[i+num_existing_docs],
-                                    "filename": filename,
+                                    "title": filename,
                                 }
                             )
 
@@ -193,7 +208,7 @@ class KnowledgeBaseManager:
                                 "id": str(uuid.uuid4()),
                                 "content": sdoc.page_content,
                                 "content_vector": docs_to_add_embeddings[i],
-                                "filename": filename,
+                                "title": filename,
                             }
                         )
 
@@ -212,16 +227,12 @@ class KnowledgeBaseManager:
             return e
 
     def delete_embeddings_function(self, fileName, index_name):
-        search_client = SearchClient(
-            endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-            index_name=index_name,
-            credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
-        )
+
         try:
             print(fileName)
 
             # Search for all the docs/chunks with that particular fileName
-            search_result = search_client.search(filter=f"filename eq '{fileName}'")
+            search_result = self.search_index_client.search(filter=f"filename eq '{fileName}'")
             ids_to_delete = []
             for result in search_result:
                 # Extract the doc's id
@@ -229,7 +240,7 @@ class KnowledgeBaseManager:
                 ids_to_delete.append({"id": result["id"]})
 
             if len(ids_to_delete) != 0:
-                search_client.delete_documents(ids_to_delete)
+                self.search_index_client.delete_documents(ids_to_delete)
 
             return True
 
@@ -238,16 +249,13 @@ class KnowledgeBaseManager:
             return False
 
     def delete_index_function(self, index_name):
-        search_index_client = SearchIndexClient(
-            os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-            AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
-        )
         try:
-            search_index_client.delete_index(index_name)
+            self.search_index_client.delete_index(index_name)
             return True
         except Exception as e:
             print(f"An error occurred: {e}")
             return False
+
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 from typing import List, Dict, Any
 from .database_manager import DatabaseManager
+import uuid
 
 class QnAManager:
     def __init__(self, db_manager: DatabaseManager):
@@ -21,7 +22,7 @@ class QnAManager:
             bool: True if the operation is successful
         """
 
-        document = {"question": question, "answer": "", "status": "unanswered"}
+        document = {"id": str(uuid.uuid4()),"question": question, "answer": "", "status": "unanswered"}
         return self.db_manager.insert_document(document)
 
     def add_answer_to_question(self, question:str, answer:str)->bool:

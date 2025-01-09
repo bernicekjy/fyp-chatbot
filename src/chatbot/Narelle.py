@@ -57,7 +57,7 @@ class Narelle:
 
         # Defines QnA manager and database to store QnAs
         qna_db_manager = DatabaseManager(
-            db_connection_str=os.environ.get("ATLAS_CONNECTION_STR"),
+            db_connection_str=os.environ.get("AZURE_COSMOSDB_CONNECTION_STR"),
             db_name = "qnaDatabase",
             collection_name = "questions")
         self.qna_manager = QnAManager(qna_db_manager)
