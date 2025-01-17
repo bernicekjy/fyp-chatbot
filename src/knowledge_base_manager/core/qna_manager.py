@@ -1,6 +1,5 @@
 from typing import List, Dict, Any
 from .database_manager import DatabaseManager
-import uuid
 
 class QnAManager:
     def __init__(self, db_manager: DatabaseManager):

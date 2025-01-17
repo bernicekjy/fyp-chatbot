@@ -4,8 +4,8 @@ import sys
 from dotenv import load_dotenv
 from chatbot.Narelle import Narelle
 import pprint
-from rl_knowledge_base_manager.core.database_manager import DatabaseManager
-from rl_knowledge_base_manager.core.qna_manager import QnAManager
+from knowledge_base_manager.core.database_manager import DatabaseManager
+from knowledge_base_manager.core.qna_manager import QnAManager
 
 # Load environment variables from the .env file
 load_dotenv()

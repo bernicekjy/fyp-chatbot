@@ -5,8 +5,8 @@ from langchain_openai import AzureChatOpenAI
 from typing import List
 from langchain.callbacks import get_openai_callback
 from datetime import datetime
-from rl_knowledge_base_manager.core.database_manager import DatabaseManager
-from rl_knowledge_base_manager.core.qna_manager import QnAManager
+from knowledge_base_manager.core.database_manager import DatabaseManager
+from knowledge_base_manager.core.qna_manager import QnAManager
 from utils.logger import get_logger
 
 # import logger

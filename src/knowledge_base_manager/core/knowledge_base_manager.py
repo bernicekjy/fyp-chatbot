@@ -19,13 +19,12 @@ from azure.search.documents import SearchClient
 import uuid
 from pathlib import Path
 from dotenv import load_dotenv
-from kb.utils import load_document, strings_to_documents
-from rl_knowledge_base_manager.core.qna_manager import QnAManager
+from knowledge_base_manager.utils.document_loaders import load_document, strings_to_documents
+from knowledge_base_manager.core.qna_manager import QnAManager
 
 # Load environment variables from the .env file
 load_dotenv()
 
-# TODO: FIX THIS
 class KnowledgeBaseManager:
     def __init__(self):
 
@@ -52,12 +51,10 @@ class KnowledgeBaseManager:
         self.text_splitter = CharacterTextSplitter(chunk_size=1500, chunk_overlap=500)
 
 
-
     def create_index(self, index_name):  # for course
         try:  
 
             # Defines the structure of the search index
-            # TODO: adjust this?
             fields = [
                 # Used for basic indexing
                 SearchableField(

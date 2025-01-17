@@ -1,10 +1,10 @@
 import streamlit as st
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-from rl_knowledge_base_manager.core.database_manager import DatabaseManager
-from rl_knowledge_base_manager.core.qna_manager import QnAManager
-from src.kb.AN_KnowledgeBase import KnowledgeBaseManager
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+from knowledge_base_manager.core.database_manager import DatabaseManager
+from knowledge_base_manager.core.qna_manager import QnAManager
+from knowledge_base_manager.core.knowledge_base_manager import KnowledgeBaseManager
 # # Load environment variables from the .env file
 # load_dotenv()
 

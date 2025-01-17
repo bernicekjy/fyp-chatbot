@@ -43,4 +43,3 @@ def strings_to_documents(strings, metadata_list=None):
         )
         documents.append(doc)
     return documents
-
