@@ -27,11 +27,15 @@ qna_manager = QnAManager(qna_db_manager)
 # Defines chatbot kb manager
 kb = KnowledgeBaseManager()
 
-# initialise columns config
+# define columns config
 columns_config = {
     'question' : st.column_config.TextColumn('Question'),
     'answer' : st.column_config.TextColumn('Answer', width='large'),
+    'status' : st.column_config.TextColumn('Status'),
 }
+
+# define column order
+column_order = ("question", "answer", "status")
 
 # define tabs on UI
 tab1, tab2, tab3 = st.tabs(["Unanswered Questions", "QnA Knowledge Base", "All questions"])
@@ -42,7 +46,7 @@ with tab1:
     if 'updated_df ' not in st.session_state:
         st.session_state['updated_df '] = ''
 
-    st.session_state["updated_df"] = st.data_editor(st.session_state["initial_df"], key="unanswered_qna_list", column_config=columns_config)
+    st.session_state["updated_df"] = st.data_editor(st.session_state["initial_df"], key="unanswered_qna_list", column_config=columns_config, column_order=column_order)
 
     # Configure "Update Knowledge Base" button
     if st.button("Update Knowledge Base"):
@@ -53,7 +57,7 @@ with tab1:
         if len(edited_rows)>0:
 
             # update each edited row
-            for row_num in list(st.session_state["unanswered_qna_list"]["edited_rows"].keys()):
+            for row_num in list(edited_rows.keys()):
                 row_to_update = st.session_state['updated_df'][row_num]
             
                 # update document
@@ -61,6 +65,11 @@ with tab1:
 
                 # generate a new qna document and update kb
                 kb.fetch_and_index_cosmosdb_data(index_name="fyp-test", qna_manager=qna_manager)
+
+            # show success message
+            st.success(f"Successfully updated the knowledge base with {len(edited_rows)} new entries!")
+        else:
+            st.warning("No changes detected. Please edit a question to update the knowledge base.")
 
                 
 
