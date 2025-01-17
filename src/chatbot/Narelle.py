@@ -118,19 +118,25 @@ class Narelle:
             num_chat_history=num_chat_history
         )
 
+        # rephrase query into a single question
+        rephrased_query = self.rephrase_to_single_question(chat_history=latest_chat_history)
+
         # compose complete prompt (with history)
         full_prompt = (
             self.sysmsg
-            + "Chat History: "
-            + str(latest_chat_history)
+            # + "Chat History: "
+            # + str(latest_chat_history)
             + "\nContext: "
             + context_string
             + "\nQuery: "
-            + query
+            + rephrased_query
         )
 
-        # print context
-        logger.info("\n\n===== CONTEXT FOR QUERY '"+query+"' =====\n\n"+context_string+"\n===================\n")
+        # # print context
+        # logger.info("\n\n===== CONTEXT FOR QUERY '"+query+"' =====\n\n"+context_string+"\n===================\n")
+
+        # print latest_chat_history
+        logger.info("Rephrased query: "+rephrased_query)
 
         # invoke LLM
         with get_openai_callback() as cb:
@@ -152,7 +158,7 @@ class Narelle:
             chatbot_response = "Sorry, I am unable to answer your question. I have forwarded your question to your course instructor."
 
             # add question to unanswered questions
-            self.qna_manager.add_unanswered_question(question=query)
+            self.qna_manager.add_unanswered_question(question=rephrased_query)
             
 
         return {
@@ -162,6 +168,27 @@ class Narelle:
             "tokens": total_tokens,
         }
     
+    def rephrase_to_single_question(self, chat_history):
+        
+        rephrase_prompt = f"""Given the following conversation and a follow up question, rephrase the latest user query to be a standalone query.
+
+                            Chat History:
+                            {chat_history}"""
+        
+        # invoke LLM
+        with get_openai_callback() as cb:
+            response = self.llm.invoke(rephrase_prompt)
+
+            logger.info(
+                f"=======[LLM COST] total cost: {cb.total_cost}; total tokens: {cb.total_tokens}"
+            )
+
+            total_cost = cb.total_cost
+            total_tokens = cb.total_tokens
+
+        rephrased_question = response.content
+
+        return rephrased_question
 
 if __name__ == "__main__":
     bot = Narelle()

@@ -44,6 +44,7 @@ with tab1:
 
     st.session_state["updated_df"] = st.data_editor(st.session_state["initial_df"], key="unanswered_qna_list", column_config=columns_config)
 
+    # Configure "Update Knowledge Base" button
     if st.button("Update Knowledge Base"):
 
         edited_rows = st.session_state["unanswered_qna_list"]["edited_rows"]
@@ -58,8 +59,10 @@ with tab1:
                 # update document
                 qna_manager.add_answer_to_question(question=row_to_update['question'], answer=row_to_update['answer'])
 
-                # # generate a new qna document and update kb
+                # generate a new qna document and update kb
                 kb.fetch_and_index_cosmosdb_data(index_name="fyp-test", qna_manager=qna_manager)
+
+                
 
 with tab2:
     st.session_state['initial_df'] = qna_manager.get_answered_questions()
