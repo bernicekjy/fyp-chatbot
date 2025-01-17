@@ -4,7 +4,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 from rl_knowledge_base_manager.core.database_manager import DatabaseManager
 from rl_knowledge_base_manager.core.qna_manager import QnAManager
-
+from src.kb.AN_KnowledgeBase import KnowledgeBaseManager
 # # Load environment variables from the .env file
 # load_dotenv()
 
@@ -23,6 +23,9 @@ qna_db_manager = DatabaseManager(
 
 # Defines QnA kb manager
 qna_manager = QnAManager(qna_db_manager)
+
+# Defines chatbot kb manager
+kb = KnowledgeBaseManager()
 
 # initialise columns config
 columns_config = {
@@ -56,7 +59,7 @@ with tab1:
                 qna_manager.add_answer_to_question(question=row_to_update['question'], answer=row_to_update['answer'])
 
                 # # generate a new qna document and update kb
-                # qna_manager.update_qna_document(index_name="fyp-sc1015-without-faqs")
+                kb.fetch_and_index_cosmosdb_data(index_name="fyp-test", qna_manager=qna_manager)
 
 with tab2:
     st.session_state['initial_df'] = qna_manager.get_answered_questions()

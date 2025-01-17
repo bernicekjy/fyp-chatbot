@@ -30,7 +30,7 @@ class Narelle:
         # Defines retriever used
         self.search_client = SearchClient(
             endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-            index_name="fyp-sc1015-without-faqs",
+            index_name="fyp-test",
             credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
         )
 
@@ -82,7 +82,7 @@ class Narelle:
         documents = self.search_client.search(context_query, top=k)
         for doc in documents:
             contexts.append(doc["content"])
-            sources.append(doc["filename"])
+            sources.append(doc["title"])
 
         return contexts, list(set(sources))
 
@@ -168,7 +168,6 @@ if __name__ == "__main__":
 
     while True:
         query = input("Enter your query: ")
-        tq_response = bot.is_trivial_query(query)
         response = bot.answer_this(query=query)
         
         print("Response: \n", response)

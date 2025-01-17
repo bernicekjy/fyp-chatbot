@@ -1,6 +1,7 @@
 
 from langchain_community.document_loaders import TextLoader
 from langchain.document_loaders import PyPDFLoader, Docx2txtLoader, CSVLoader
+from langchain.schema import Document
 import warnings
 
 # ignore deprecation warnings
@@ -27,4 +28,19 @@ def load_document(file_path: str):
         docs = loader.load()
 
     return docs[0]
+
+def strings_to_documents(strings, metadata_list=None):
+    """
+    Convert a list of strings to Document objects without saving to disk.
+    
+    """
+    documents = []
+    for i, string in enumerate(strings):
+        metadata = metadata_list[i] if metadata_list else {"source": f"string_{i + 1}"}
+        doc = Document(
+            page_content=string,
+            metadata=metadata
+        )
+        documents.append(doc)
+    return documents
 

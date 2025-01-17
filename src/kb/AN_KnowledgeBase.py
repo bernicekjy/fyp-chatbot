@@ -19,7 +19,8 @@ from azure.search.documents import SearchClient
 import uuid
 from pathlib import Path
 from dotenv import load_dotenv
-from kb.utils import load_document
+from kb.utils import load_document, strings_to_documents
+from rl_knowledge_base_manager.core.qna_manager import QnAManager
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -41,7 +42,6 @@ class KnowledgeBaseManager:
                 endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
                 credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
             )
-
         
         # Finds the dimension of the embedding model
         sample_text = "Embeddings dimension finder"
@@ -70,16 +70,6 @@ class KnowledgeBaseManager:
                     sortable=False,
                     facetable=False,
                     analyzer_name="keyword"
-                ),
-                SimpleField(
-                    name="parentId",
-                    type=SearchFieldDataType.String,
-                    key=False,
-                    filterable=True,
-                    retrievable=True,
-                    stored=True,
-                    sortable=False,
-                    facetable=False,
                 ),
                 # Used for complex search features
                 SearchableField(
@@ -128,6 +118,7 @@ class KnowledgeBaseManager:
 
             # Update class attribute
             self.index_name = index_name
+
             return index_name
         except Exception as e:
             return e
@@ -225,6 +216,22 @@ class KnowledgeBaseManager:
         except Exception as e:
             print(f"An error occurred: {e}")
             return e
+    
+    def add_or_update_from_strings(self, strings, index_name):
+        # Transform strings into documents
+        documents = strings_to_documents(strings)
+
+        return self.add_or_update_docs(documents, index_name)
+
+    
+    def fetch_and_index_cosmosdb_data(self, index_name, qna_manager:QnAManager):
+        try:
+            # Fetch all data from Azure CosmosDB
+            qna_list_str = qna_manager.generate_qna_string()
+
+            self.add_or_update_from_strings(strings=[qna_list_str], index_name=index_name)
+        except Exception as e:
+            print(f"Failed to index data: {e}")
 
     def delete_embeddings_function(self, fileName, index_name):
 
@@ -262,11 +269,6 @@ if __name__ == "__main__":
     kb = KnowledgeBaseManager()
     new_index_name = "fyp-sc1015-without-faqs"
 
-    # # creating index
-    # kb.create_index(
-    #     index_name= new_index_name
-    # )
-
     # adding documents into ai search storage
     documents = []
     directory_path = "/Users/bern/Documents/FYP/[CONFIDENTIAL] Chatlog and test documents/sc1015_documents/Without FAQS/"
@@ -278,23 +280,5 @@ if __name__ == "__main__":
 
     kb.add_or_update_docs(documents=documents, index_name=new_index_name)
 
-    # # query index
-    # # Defines retriever used
-    # search_client = SearchClient(
-    #     endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-    #     index_name="fyp-sc1015",
-    #     credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
-    # )
+    
 
-    # query = "What is happening at each academic week?"
-    # documents = list(search_client.search(query))
-    # contexts = []
-    # sources = []
-    # for doc in documents[:3]:
-    #     pprint.pprint(doc)
-    #     print("-------")
-    #     # contexts.append(doc["content"])
-    #     # sources.append(doc["filename"])
-    #     # print(
-    #     #     f"=====Retriever Info======\nCONTEXTS: {contexts}\nSOURCES {sources}"
-    #     # )
