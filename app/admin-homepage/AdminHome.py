@@ -51,26 +51,28 @@ with tab1:
     # Configure "Update Knowledge Base" button
     if st.button("Update Knowledge Base"):
 
-        edited_rows = st.session_state["unanswered_qna_list"]["edited_rows"]
+        try:
+            edited_rows = st.session_state["unanswered_qna_list"]["edited_rows"]
 
-        # update knowledge base
-        if len(edited_rows)>0:
+            # update knowledge base
+            if len(edited_rows)>0:
 
-            # update each edited row
-            for row_num in list(edited_rows.keys()):
-                row_to_update = st.session_state['updated_df'][row_num]
-            
-                # update document
-                qna_manager.add_answer_to_question(question=row_to_update['question'], answer=row_to_update['answer'])
+                # update each edited row
+                for row_num in list(edited_rows.keys()):
+                    row_to_update = st.session_state['updated_df'][row_num]
+                
+                    # update document
+                    qna_manager.add_answer_to_question(question=row_to_update['question'], answer=row_to_update['answer'])
 
-                # generate a new qna document and update kb
-                kb.fetch_and_index_cosmosdb_data(index_name="fyp-test", qna_manager=qna_manager)
+                    # generate a new qna document and update kb
+                    kb.fetch_and_index_cosmosdb_data(index_name="fyp-test", qna_manager=qna_manager)
 
-            # show success message
-            st.success(f"Successfully updated the knowledge base with {len(edited_rows)} new entries!")
-        else:
-            st.warning("No changes detected. Please edit a question to update the knowledge base.")
-
+                # show success message
+                st.success(f"Successfully updated the knowledge base with {len(edited_rows)} new entries!")
+            else:
+                st.warning("No changes detected. Please edit a question to update the knowledge base.")
+        except Exception as e:
+            st.error(f"An error occurred while attempting to update the knowledge base: {e}")
                 
 
 with tab2:
