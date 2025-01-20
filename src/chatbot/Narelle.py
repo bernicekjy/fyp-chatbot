@@ -80,6 +80,7 @@ class Narelle:
         sources = []
 
         documents = self.search_client.search(context_query, top=k)
+        
         for doc in documents:
             contexts.append(doc["content"])
             sources.append(doc["title"])
@@ -124,12 +125,12 @@ class Narelle:
         # compose complete prompt (with history)
         full_prompt = (
             self.sysmsg
-            # + "Chat History: "
-            # + str(latest_chat_history)
+            + "Chat History: "
+            + str(latest_chat_history)
             + "\nContext: "
             + context_string
             + "\nQuery: "
-            + rephrased_query
+            + query
         )
 
         # # print context
