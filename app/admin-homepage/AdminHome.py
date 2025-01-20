@@ -5,6 +5,7 @@ import sys
 from knowledge_base_manager.core.database_manager import DatabaseManager
 from knowledge_base_manager.core.qna_manager import QnAManager
 from knowledge_base_manager.core.knowledge_base_manager import KnowledgeBaseManager
+from chatbot.AN_Knowledge_Base import AN_KB_Manager
 # # Load environment variables from the .env file
 # load_dotenv()
 
@@ -15,17 +16,9 @@ st.set_page_config(
 st.title(":woman-raising-hand: AN Admin")
 st.write(f"For answering non-trivial queries related to {os.environ.get('COURSE_NAME')}")
 
-# Defines database manager with QnAs
-qna_db_manager = DatabaseManager(
-    db_connection_str=os.environ.get("AZURE_COSMOSDB_CONNECTION_STR"),
-    db_name = "qnaDatabase",
-    collection_name = "questions")
 
-# Defines QnA kb manager
-qna_manager = QnAManager(qna_db_manager)
-
-# Defines chatbot kb manager
-kb = KnowledgeBaseManager()
+# Get Ask Narelle's knowledge base manager
+an_kb = AN_KB_Manager()
 
 # define columns config
 columns_config = {
@@ -41,7 +34,7 @@ column_order = ("question", "answer", "status")
 tab1, tab2, tab3 = st.tabs(["Unanswered Questions", "QnA Knowledge Base", "All questions"])
 
 with tab1:
-    st.session_state['initial_df'] = qna_manager.get_unanswered_questions()
+    st.session_state['initial_df'] = an_kb.qna_manager.get_unanswered_questions()
 
     if 'updated_df ' not in st.session_state:
         st.session_state['updated_df '] = ''
@@ -62,10 +55,10 @@ with tab1:
                     row_to_update = st.session_state['updated_df'][row_num]
                 
                     # update document
-                    qna_manager.add_answer_to_question(question=row_to_update['question'], answer=row_to_update['answer'])
+                    an_kb.qna_manager.add_answer_to_question(question=row_to_update['question'], answer=row_to_update['answer'])
 
-                    # generate a new qna document and update kb
-                    kb.fetch_and_index_cosmosdb_data(index_name="fyp-test", qna_manager=qna_manager)
+                    # sync qna list to chatbot's knowledge base
+                    an_kb.sync_qna_to_kb()
 
                 # show success message
                 st.success(f"Successfully updated the knowledge base with {len(edited_rows)} new entries!")
@@ -76,7 +69,7 @@ with tab1:
                 
 
 with tab2:
-    st.session_state['initial_df'] = qna_manager.get_answered_questions()
+    st.session_state['initial_df'] = an_kb.qna_manager.get_answered_questions()
 
     if 'updated_df ' not in st.session_state:
         st.session_state['updated_df '] = ''
@@ -84,7 +77,7 @@ with tab2:
     st.session_state["updated_df"] = st.data_editor(st.session_state["initial_df"], key="qna_kb_list", column_config=columns_config)
 
 with tab3:
-    st.session_state['initial_df'] = qna_manager.get_all_questions()
+    st.session_state['initial_df'] = an_kb.qna_manager.get_all_questions()
 
     if 'updated_df ' not in st.session_state:
         st.session_state['updated_df '] = ''

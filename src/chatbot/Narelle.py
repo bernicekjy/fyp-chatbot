@@ -80,7 +80,7 @@ class Narelle:
         sources = []
 
         documents = self.search_client.search(context_query, top=k)
-        
+
         for doc in documents:
             contexts.append(doc["content"])
             sources.append(doc["title"])
@@ -133,8 +133,8 @@ class Narelle:
             + query
         )
 
-        # # print context
-        # logger.info("\n\n===== CONTEXT FOR QUERY '"+query+"' =====\n\n"+context_string+"\n===================\n")
+        # print context
+        logger.info("\n\n===== CONTEXT FOR QUERY '"+query+"' =====\n\n"+context_string+"\n===================\n")
 
         # print latest_chat_history
         logger.info("Rephrased query: "+rephrased_query)

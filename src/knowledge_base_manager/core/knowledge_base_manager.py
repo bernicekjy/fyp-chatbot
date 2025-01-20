@@ -1,4 +1,4 @@
-from langchain_openai import AzureOpenAIEmbeddings
+from langchain.embeddings import AzureOpenAIEmbeddings
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
@@ -26,32 +26,56 @@ from knowledge_base_manager.core.qna_manager import QnAManager
 load_dotenv()
 
 class KnowledgeBaseManager:
-    def __init__(self):
+    def __init__(self, text_embedding_azure_deployment:str, azure_openai_api_key:str, azure_openai_endpoint:str, text_embedding_model:str,   azure_ai_search_endpoint:str, azure_ai_search_api_key:str, index_name:str):
+
+        # Define chunk size and overlap for splitting text
+        chunk_size = 1024
+        chunk_overlap = 500
 
         # Defines the instance of AzureOpenAIEmbedding class
         self.embeddings = AzureOpenAIEmbeddings(
-            azure_deployment=os.environ.get("TEXT_EMBEDDING_MODEL_DEPLOYMENT"),
-            api_key=os.environ.get("AZURE_OPENAI_APIKEY"),
-            azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-            model=os.environ.get("TEXT_EMBEDDING_MODEL_NAME"),
+            azure_deployment=text_embedding_azure_deployment,
+            openai_api_key=azure_openai_api_key,
+            azure_endpoint=azure_openai_endpoint,
+            model=text_embedding_model,
+            chunk_size=chunk_size,
         )
 
         # Defines instance of SearchIndexClient class
         self.search_index_client = SearchIndexClient(
-                endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-                credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
+                endpoint=azure_ai_search_endpoint,
+                credential=azure_ai_search_api_key,
             )
         
-        # Finds the dimension of the embedding model
+        # # Defines the instance of AzureOpenAIEmbedding class
+        # self.embeddings = AzureOpenAIEmbeddings(
+        #     azure_deployment=os.environ.get("TEXT_EMBEDDING_MODEL_DEPLOYMENT"),
+        #     openai_api_key=os.environ.get("AZURE_OPENAI_APIKEY"),
+        #     azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+        #     model=os.environ.get("TEXT_EMBEDDING_MODEL_NAME"),
+        #     chunk_size=chunk_size,
+        # )
+
+        # # Defines instance of SearchIndexClient class
+        # self.search_index_client = SearchIndexClient(
+        #         endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
+        #         credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
+        #     )
+
+        # create SearchClient for search function
+        self.search_client = SearchClient(endpoint=azure_ai_search_endpoint,
+                credential=azure_ai_search_api_key,index_name=index_name)
+        
+        # Find the dimension of the embedding model
         sample_text = "Embeddings dimension finder"
         embedding_vector = self.embeddings.embed_query(sample_text)
         self.embedding_dimension = len(embedding_vector)
 
-        # Defines instance of CharacterTextSplitter class with chunk size of 1500 and chunk overlap of 500
-        self.text_splitter = CharacterTextSplitter(chunk_size=1500, chunk_overlap=500)
+        # Define instance of CharacterTextSplitter class with chunk size of 1500 and chunk overlap of 500
+        self.text_splitter = CharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
 
-    def create_index(self, index_name):  # for course
+    def create_index(self):  # for course
         try:  
 
             # Defines the structure of the search index
@@ -107,24 +131,19 @@ class KnowledgeBaseManager:
             )
 
             searchindex = SearchIndex(
-                name=index_name, fields=fields, vector_search=vector_search
+                name=self.index_name, fields=fields, vector_search=vector_search
             )
 
             # Creates the new search index or updates it if it already exists
             self.search_index_client.create_or_update_index(index=searchindex)
 
-            # Update class attribute
-            self.index_name = index_name
 
-            return index_name
+            return self.index_name
         except Exception as e:
             return e
 
-    def add_or_update_docs(self, documents, index_name):
-        # create SearchClient for search function
-        search_client = SearchClient(endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-                credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),index_name=index_name)
-
+    def add_or_update_docs(self, documents):
+        
         try:
             # List to store all the docs that need to be added
             docs_to_add_final = []
@@ -139,7 +158,7 @@ class KnowledgeBaseManager:
 
                 # check if document already exists
                 search_results = list(
-                    search_client.search(filter=f"title eq '{filename}'")
+                    self.search_client.search(filter=f"title eq '{filename}'")
                 )
 
                 split_docs = self.text_splitter.split_documents([doc])
@@ -203,10 +222,10 @@ class KnowledgeBaseManager:
                     print(f"added {filename}!")
 
             if docs_to_update_final:
-                search_client.merge_documents(docs_to_update_final)
+                self.search_client.merge_documents(docs_to_update_final)
 
             if docs_to_add_final:
-                search_client.upload_documents(docs_to_add_final)
+                self.search_client.upload_documents(docs_to_add_final)
 
             return True
 
@@ -214,23 +233,27 @@ class KnowledgeBaseManager:
             print(f"An error occurred: {e}")
             return e
     
-    def add_or_update_from_strings(self, strings, index_name):
+    def add_or_update_from_strings(self, strings):
         # Transform strings into documents
         documents = strings_to_documents(strings)
 
-        return self.add_or_update_docs(documents, index_name)
+        return self.add_or_update_docs(documents, self.index_name)
 
     
-    def fetch_and_index_cosmosdb_data(self, index_name, qna_manager:QnAManager):
+    def fetch_and_index_cosmosdb_data(self, qna_manager:QnAManager):
         try:
             # Fetch all data from Azure CosmosDB
             qna_list_str = qna_manager.generate_qna_string()
 
-            self.add_or_update_from_strings(strings=[qna_list_str], index_name=index_name)
+            self.add_or_update_from_strings(strings=[qna_list_str], index_name=self.index_name)
+
+            return True
         except Exception as e:
             print(f"Failed to index data: {e}")
 
-    def delete_embeddings_function(self, fileName, index_name):
+            return False
+
+    def delete_embeddings_function(self, fileName):
 
         try:
             print(fileName)
@@ -252,9 +275,9 @@ class KnowledgeBaseManager:
             print(f"An error occurred: {e}")
             return False
 
-    def delete_index_function(self, index_name):
+    def delete_index_function(self):
         try:
-            self.search_index_client.delete_index(index_name)
+            self.search_index_client.delete_index(self.index_name)
             return True
         except Exception as e:
             print(f"An error occurred: {e}")
