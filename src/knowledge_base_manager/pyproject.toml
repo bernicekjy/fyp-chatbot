@@ -1,0 +1,21 @@
+[project]
+name = "knowledge-base-manager"
+version = "0.1.0"
+description = "This Python module is designed to manage and expand knowledge bases (KBs) for chatbots. It enables dynamic growth of the knowledge base by seamlessly adding question and answer (QnA) pairs. The module integrates with Azure Cosmos DB using MongoDB for scalable storage and uses Azure AI Search for efficient knowledge base retrieval. Additionally, it leverages the Azure OpenAI model for generating text embeddings, enhancing the chatbot's ability to understand and respond to user queries effectively."
+authors = [
+    {name = "Bernice K"}
+]
+readme = "README.md"
+requires-python = ">=3.9,<3.9.7 || >3.9.7,<4.0"
+dependencies = [
+    "pymongo (>=4.10.1,<5.0.0)",
+    "streamlit (>=1.41.1,<2.0.0)",
+    "langchain (>=0.3.15,<0.4.0)",
+    "azure-search-documents (>=11.5.2,<12.0.0)",
+    "azure-core (>=1.32.0,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

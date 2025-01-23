@@ -7,10 +7,12 @@ from langchain.callbacks import get_openai_callback
 from datetime import datetime
 from knowledge_base_manager.core.database_manager import DatabaseManager
 from knowledge_base_manager.core.qna_manager import QnAManager
+from chatbot.AN_Knowledge_Base import AN_KB_Manager
 from utils.logger import get_logger
 
 # import logger
 logger = get_logger(__name__)
+
 course_name = os.environ.get("COURSE_NAME")
 
 class Narelle:
@@ -55,12 +57,8 @@ class Narelle:
         # Initialise chat history
         self.chat_history = []
 
-        # Defines QnA manager and database to store QnAs
-        qna_db_manager = DatabaseManager(
-            db_connection_str=os.environ.get("AZURE_COSMOSDB_CONNECTION_STR"),
-            db_name = "qnaDatabase",
-            collection_name = "questions")
-        self.qna_manager = QnAManager(qna_db_manager)
+        # Defines knowledge base manager
+        self.kb_manager = AN_KB_Manager()
 
         # Cost tracking
         self.total_api_cost = 0
@@ -159,7 +157,7 @@ class Narelle:
             chatbot_response = "Sorry, I am unable to answer your question. I have forwarded your question to your course instructor."
 
             # add question to unanswered questions
-            self.qna_manager.add_unanswered_question(question=rephrased_query)
+            self.kb_manager.qna_manager.add_unanswered_question(question=rephrased_query)
             
 
         return {
