@@ -85,6 +85,7 @@ class KnowledgeBaseManager:
         # Define instance of CharacterTextSplitter class with chunk size of 1500 and chunk overlap of 500
         self.text_splitter = CharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
+        self.index_name = index_name
 
     def create_index(self):
         """
@@ -357,7 +358,7 @@ class KnowledgeBaseManager:
         Returns:
             bool: True if the index was successfully deleted, False otherwise.
         """
-        
+
         try:
             self.search_index_client.delete_index(self.index_name)
             return True

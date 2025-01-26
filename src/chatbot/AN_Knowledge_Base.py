@@ -10,14 +10,11 @@ load_dotenv()
 # Initialising Ask Narelle's knowledge base manager
 class AN_KB_Manager:
     def __init__(self):
-        # Defines database manager with QnAs
-        qna_db_manager = DatabaseManager(
-            db_connection_str=os.environ.get("AZURE_COSMOSDB_CONNECTION_STR"),
-            db_name = "qnaDatabase",
-            collection_name = "questions")
 
         # Defines QnA kb manager
-        self.qna_manager = QnAManager(qna_db_manager)
+        self.qna_manager = QnAManager(db_connection_str=os.environ.get("AZURE_COSMOSDB_CONNECTION_STR"),
+            db_name = "qnaDatabase",
+            collection_name = "questions")
 
         # Defines chatbot kb manager
         self.kb = KnowledgeBaseManager(text_embedding_azure_deployment=os.environ.get("TEXT_EMBEDDING_MODEL_DEPLOYMENT"), 
@@ -34,3 +31,4 @@ class AN_KB_Manager:
     def sync_qna_to_kb(self):
         # generate a new qna document and update kb
         return self.kb.fetch_and_index_cosmosdb_data( qna_manager=self.qna_manager)
+

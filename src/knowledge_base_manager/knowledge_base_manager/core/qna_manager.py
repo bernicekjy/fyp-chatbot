@@ -2,14 +2,11 @@ from typing import List, Dict, Any
 from .database_manager import DatabaseManager
 
 class QnAManager:
-    def __init__(self, db_manager: DatabaseManager):
+    def __init__(self, db_connection_str:str, db_name:str, collection_name: str):
         """Initialise the QnAManager with a DatabaseManager instance
-
-        Args:
-            db_manager (DatabaseManager): A DatabaseManager object instance 
         """
 
-        self.db_manager = db_manager
+        self.db_manager = DatabaseManager(db_connection_str=db_connection_str, db_name=db_name, collection_name=collection_name)
     
     def add_unanswered_question(self, question:str)->bool:
         """Add a new unanswered question to the database
