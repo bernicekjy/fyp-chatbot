@@ -21,8 +21,7 @@ The `AN_KnowledgeBase.py` file in the `chatbot` module provides an example of ho
 
 ### 2. Cloning the Repository
 ```bash
-git clone <repository-url>
-cd <repository-name>
+git clone https://github.com/bernicekjy/fyp-chatbot.git
 ```
 
 ### 3. Setting up the Environment
@@ -114,43 +113,6 @@ kb_manager = KnowledgeBaseManager(
     azure_ai_search_api_key=os.environ.get("AZURE_AI_SEARCH_API_KEY"),
     index_name=os.environ.get("AZURE_AI_SEARCH_INDEX_NAME")
 )
-
-# Defines index name
-index_name = os.environ.get("AZURE_AI_SEARCH_INDEX_NAME")
-
-# Defines the instance of AzureChatOpenAI class
-llm = AzureChatOpenAI(
-    azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-    api_key=os.environ.get("AZURE_OPENAI_APIKEY"),
-    deployment_name=os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME"),
-    model_name=os.environ.get("AZURE_OPENAI_MODEL_NAME"),
-    api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
-    temperature=0,
-)
-
-# Defines retriever used
-search_client = SearchClient(
-    endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-    index_name="fyp-test",
-    credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY"))
 )
 ```
-
----
-
-## Testing the Library
-The `tests` directory contains unit tests for the knowledge base manager. Run the tests using:
-```bash
-pytest tests/
-```
-
----
-
-## Contribution
-Feel free to open issues or submit pull requests to improve this library or application. For major changes, please open an issue first to discuss what you would like to change.
-
----
-
-## License
-[Specify your license here, e.g., MIT License]
 
