@@ -71,7 +71,6 @@ if st.button("Update Knowledge Base"):
     try:
         edited_rows = st.session_state.get("all_qna_list", {}).get("edited_rows", {})
         
-        st.write(edited_rows)
         # update knowledge base
         if len(edited_rows)>0:
 

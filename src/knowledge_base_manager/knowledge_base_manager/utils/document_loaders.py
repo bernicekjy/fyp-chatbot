@@ -36,10 +36,12 @@ def strings_to_documents(strings, metadata_list=None):
     """
     documents = []
     for i, string in enumerate(strings):
-        metadata = metadata_list[i] if metadata_list else {"source": f"string_{i + 1}"}
+        metadata = metadata_list[i] if metadata_list else {"source": f"Updated Questions & Answers from Instructor {i + 1}"}
         doc = Document(
             page_content=string,
             metadata=metadata
         )
         documents.append(doc)
+
+    print("``````Documents", documents)
     return documents

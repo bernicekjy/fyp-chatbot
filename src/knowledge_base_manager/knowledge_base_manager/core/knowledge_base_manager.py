@@ -21,6 +21,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 from knowledge_base_manager.utils.document_loaders import load_document, strings_to_documents
 from knowledge_base_manager.core.qna_manager import QnAManager
+from utils.logger import get_logger
+import traceback
+# Load logger
+logger = get_logger(__name__)
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -113,6 +117,12 @@ class KnowledgeBaseManager:
                     facetable=False,
                     analyzer_name="keyword"
                 ),
+                SearchableField(
+                    name="title",
+                    type=SearchFieldDataType.String,
+                    filterable=True,
+                    sortable=True,
+                ),
                 # Used for complex search features
                 SearchableField(
                     name="content",
@@ -131,13 +141,7 @@ class KnowledgeBaseManager:
                     searchable=True,
                     vector_search_dimensions=self.embedding_dimension,
                     vector_search_profile_name="my-vector-config",
-                ),
-                SearchableField(
-                    name="title",
-                    type=SearchFieldDataType.String,
-                    filterable=True,
-                    sortable=True,
-                ),
+                ), 
             ]
 
             # Setting up vector search configuration
@@ -181,6 +185,16 @@ class KnowledgeBaseManager:
                        and returns the exception.
         """
         
+        logger.info("Adding or updating documents in the knowledge base...")
+        search_client = SearchClient(
+                endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
+                index_name=os.environ.get("AZURE_AI_SEARCH_INDEX_NAME"),
+                credential=AzureKeyCredential(
+                    os.environ.get("AZURE_AI_SEARCH_API_KEY")
+                ),
+            )
+
+        logger.info(f"Documents: {documents}")
         try:
             # List to store all the docs that need to be added
             docs_to_add_final = []
@@ -195,12 +209,12 @@ class KnowledgeBaseManager:
 
                 # check if document already exists
                 search_results = list(
-                    self.search_client.search(filter=f"title eq '{filename}'")
+                    search_client.search(filter=f"title eq '{filename}'")
                 )
 
                 split_docs = self.text_splitter.split_documents([doc])
                 
-
+                logger.info(f"Results: {search_results}")
                 if search_results:
 
                     docs_to_update_id = [result["id"] for result in search_results]
@@ -259,15 +273,15 @@ class KnowledgeBaseManager:
                     print(f"added {filename}!")
 
             if docs_to_update_final:
-                self.search_client.merge_documents(docs_to_update_final)
+                search_client.merge_documents(docs_to_update_final)
 
             if docs_to_add_final:
-                self.search_client.upload_documents(docs_to_add_final)
+                search_client.upload_documents(docs_to_add_final)
 
             return True
 
         except Exception as e:
-            print(f"An error occurred: {e}")
+            logger.error(f"An error occurred: {traceback.format_exc()}")
             return e
     
     def add_or_update_from_strings(self, strings):
@@ -289,7 +303,7 @@ class KnowledgeBaseManager:
         # Transform strings into documents
         documents = strings_to_documents(strings)
 
-        return self.add_or_update_docs(documents, self.index_name)
+        return self.add_or_update_docs(documents)
 
     
     def fetch_and_index_cosmosdb_data(self, qna_manager:QnAManager):
@@ -310,12 +324,11 @@ class KnowledgeBaseManager:
         try:
             # Fetch all data from Azure CosmosDB
             qna_list_str = qna_manager.generate_qna_string()
+            
+            return self.add_or_update_from_strings(strings=[qna_list_str])
 
-            self.add_or_update_from_strings(strings=[qna_list_str], index_name=self.index_name)
-
-            return True
         except Exception as e:
-            print(f"Failed to index data: {e}")
+            (f"Failed to index data: {e}")
 
             return False
 
