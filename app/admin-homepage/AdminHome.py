@@ -34,11 +34,12 @@ def status_color_formatter(status):
 columns_config = {
     'question' : st.column_config.TextColumn('Question', width="large"),
     'answer' : st.column_config.TextColumn('Answer', width='large'),
-    'status' : st.column_config.TextColumn('Status', width='small')
+    'status' : st.column_config.TextColumn('Status', width='small'),
+    'timestamp' : st.column_config.DatetimeColumn('Timestamp', width='small')
 }
 
 # define column order
-column_order = ("question", "answer", "status")
+column_order = ("timestamp","question", "answer", "status")
 
 # # define tabs on UI
 # tab1, tab2, tab3 = st.tabs(["Unanswered Questions", "QnA Knowledge Base", "All questions"])

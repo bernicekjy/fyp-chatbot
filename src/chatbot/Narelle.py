@@ -9,6 +9,7 @@ from knowledge_base_manager.core.database_manager import DatabaseManager
 from knowledge_base_manager.core.qna_manager import QnAManager
 from chatbot.AN_Knowledge_Base import AN_KB_Manager
 from utils.logger import get_logger
+from openai import BadRequestError
 
 # import logger
 logger = get_logger(__name__)
@@ -152,18 +153,23 @@ class Narelle:
 
         # if non-trivial question, query instructor
         if "QUERY_INSTRUCTOR" in chatbot_response:
-            
-            # rephrase query into a single question
-            rephrased_query = self.rephrase_to_single_question(chat_history=latest_chat_history)
-            
-            # print latest_chat_history
-            logger.info("Rephrased query: "+rephrased_query)
 
             # chatbot response upon non-trivial question
             chatbot_response = "Sorry, I am unable to answer your question. I have forwarded your question to your course instructor."
+            
+            # get latest chat history with user query
+            chat_history_with_query = self.get_latest_chat_history(num_chat_history=num_chat_history)
 
-            # add question to unanswered questions
-            self.kb_manager.qna_manager.add_unanswered_question(question=rephrased_query)
+            # rephrase query into a single question
+            rephrased_query = self.rephrase_to_single_question(chat_history=chat_history_with_query)
+            
+            if rephrased_query is not None:
+                # print latest_chat_history
+                logger.info("Rephrased query: "+rephrased_query)
+                # add question to unanswered questions
+                self.kb_manager.qna_manager.add_unanswered_question(question=rephrased_query)
+            else:
+                logger.error("Non-trivial query")
         
         # add chatbot response to chat history
         self.chat_history.append(chatbot_response)
@@ -184,18 +190,23 @@ class Narelle:
         
         logger.info("chat_history: "+str(chat_history))
 
-        # invoke LLM
-        with get_openai_callback() as cb:
-            response = self.llm.invoke(rephrase_prompt)
+        try:
+            # invoke LLM
+            with get_openai_callback() as cb:
 
-            # logger.info(
-            #     f"=======[LLM COST] total cost: {cb.total_cost}; total tokens: {cb.total_tokens}"
-            # )
+                response = self.llm.invoke(rephrase_prompt)
 
-            total_cost = cb.total_cost
-            total_tokens = cb.total_tokens
+                # logger.info(
+                #     f"=======[LLM COST] total cost: {cb.total_cost}; total tokens: {cb.total_tokens}"
+                # )
 
-        rephrased_question = response.content
+                total_cost = cb.total_cost
+                total_tokens = cb.total_tokens
+
+            rephrased_question = response.content
+        except BadRequestError as e:
+            logger.error("Error occurred while rephrasing question: "+str(e))
+            return None
 
         return rephrased_question
 

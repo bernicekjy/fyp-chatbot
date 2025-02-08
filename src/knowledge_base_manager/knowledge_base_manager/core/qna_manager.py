@@ -1,5 +1,6 @@
 from typing import List, Dict, Any
 from .database_manager import DatabaseManager
+from datetime import datetime
 
 class QnAManager:
     def __init__(self, db_connection_str:str, db_name:str, collection_name: str):
@@ -17,8 +18,10 @@ class QnAManager:
         Returns:
             bool: True if the operation is successful
         """
+        # add current time
+        now = datetime.now()
 
-        document = {"question": question, "answer": "", "status": "unanswered"}
+        document = {"question": question, "answer": "", "status": "unanswered", "timestamp": now}
         return self.db_manager.insert_document(document)
 
     def add_answer_to_question(self, question:str, answer:str)->bool:
