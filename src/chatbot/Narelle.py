@@ -117,8 +117,6 @@ class Narelle:
             num_chat_history=num_chat_history
         )
 
-        # rephrase query into a single question
-        rephrased_query = self.rephrase_to_single_question(chat_history=latest_chat_history)
 
         # compose complete prompt (with history)
         full_prompt = (
@@ -131,34 +129,44 @@ class Narelle:
             + query
         )
 
-        # print context
-        logger.info("\n\n===== CONTEXT FOR QUERY '"+query+"' =====\n\n"+context_string+"\n===================\n")
+        # add question to chat history
+        self.chat_history.append(query)
 
-        # print latest_chat_history
-        logger.info("Rephrased query: "+rephrased_query)
+        # # print context
+        # logger.info("\n\n===== CONTEXT FOR QUERY '"+query+"' =====\n\n"+context_string+"\n===================\n")
+
 
         # invoke LLM
         with get_openai_callback() as cb:
             response = self.llm.invoke(full_prompt)
 
-            logger.info(
-                f"=======[LLM COST] total cost: {cb.total_cost}; total tokens: {cb.total_tokens}"
-            )
+            # logger.info(
+            #     f"=======[LLM COST] total cost: {cb.total_cost}; total tokens: {cb.total_tokens}"
+            # )
 
             total_cost = cb.total_cost
             total_tokens = cb.total_tokens
         
         chatbot_response = response.content
 
+
         # if non-trivial question, query instructor
         if "QUERY_INSTRUCTOR" in chatbot_response:
+            
+            # rephrase query into a single question
+            rephrased_query = self.rephrase_to_single_question(chat_history=latest_chat_history)
+            
+            # print latest_chat_history
+            logger.info("Rephrased query: "+rephrased_query)
 
             # chatbot response upon non-trivial question
             chatbot_response = "Sorry, I am unable to answer your question. I have forwarded your question to your course instructor."
 
             # add question to unanswered questions
             self.kb_manager.qna_manager.add_unanswered_question(question=rephrased_query)
-            
+        
+        # add chatbot response to chat history
+        self.chat_history.append(chatbot_response)
 
         return {
             "chatbot_response": chatbot_response,
@@ -169,18 +177,20 @@ class Narelle:
     
     def rephrase_to_single_question(self, chat_history):
         
-        rephrase_prompt = f"""Given the following conversation and a follow up question, rephrase the latest user query to be a standalone query.
+        rephrase_prompt = f"""Given the following conversation and a follow up question, rephrase the latest user query to be a standalone query. Respond with only the rephrased question.
 
                             Chat History:
                             {chat_history}"""
         
+        logger.info("chat_history: "+str(chat_history))
+
         # invoke LLM
         with get_openai_callback() as cb:
             response = self.llm.invoke(rephrase_prompt)
 
-            logger.info(
-                f"=======[LLM COST] total cost: {cb.total_cost}; total tokens: {cb.total_tokens}"
-            )
+            # logger.info(
+            #     f"=======[LLM COST] total cost: {cb.total_cost}; total tokens: {cb.total_tokens}"
+            # )
 
             total_cost = cb.total_cost
             total_tokens = cb.total_tokens
