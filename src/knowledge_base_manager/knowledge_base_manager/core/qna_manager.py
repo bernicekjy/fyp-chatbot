@@ -21,7 +21,7 @@ class QnAManager:
         # add current time
         now = datetime.now()
 
-        document = {"question": question, "answer": "", "status": "unanswered", "timestamp": now}
+        document = {"question": question, "answer": "", "status": "Unanswered", "timestamp": now}
         return self.db_manager.insert_document(document)
 
     def add_answer_to_question(self, question:str, answer:str)->bool:
@@ -36,7 +36,7 @@ class QnAManager:
         """
 
         query = {"question": question}
-        update = {"answer": answer, "status": "answered"}
+        update = {"answer": answer, "status": "Answered"}
 
         return self.db_manager.update_document(query=query, update=update)
 
@@ -58,7 +58,7 @@ class QnAManager:
 
         :return: A list of answered question documents
         """
-        query = {"status": "answered"}
+        query = {"status": "Answered"}
         return self.db_manager.find_documents(query)
 
     def get_unanswered_questions(self) -> List[Dict[str, Any]]:
@@ -67,7 +67,7 @@ class QnAManager:
 
         :return: A list of unanswered question documents
         """
-        query = {"status": "unanswered"}
+        query = {"status": "Unanswered"}
         return self.db_manager.find_documents(query)
 
     def get_all_questions(self) -> List[Dict[str, Any]]:

@@ -23,9 +23,9 @@ an_kb = AN_KB_Manager()
 
 # Define color formatting for the "Status" column
 def status_color_formatter(status):
-    if status == "answered":
+    if status == "Answered":
         return "background-color: #D4F5F2; color: #155724;" 
-    elif status == "unanswered":
+    elif status == "Unanswered":
         return "background-color: #F5D4D7; color: #721c24;" 
     return ""  # default styling
 

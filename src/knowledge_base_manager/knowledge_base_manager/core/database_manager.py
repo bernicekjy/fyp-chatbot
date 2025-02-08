@@ -44,7 +44,7 @@ class DatabaseManager:
     def find_documents(self, query: Dict[str, Any]={})-> List[Dict[str, Any]]:
         """Find documents in the collection based on a query.
 
-        e.g. result = db_manager.find_documents({"status": "unanswered"}
+        e.g. result = db_manager.find_documents({"status": "Unanswered"}
 
         Args:
             query (Dict[str, Any], optional): The query to filter documents
@@ -78,6 +78,19 @@ class DatabaseManager:
         """
 
         result = self.collection.delete_one(query)
+
+        return result.deleted_count
+
+    def delete_documents(self, query: Dict[str, Any]={})->int:
+        """Delete multiple documents from the collection based on a query.
+
+        Args:
+            query (Dict[str, Any], optional): The query to filter documents to delete
+
+        Returns:
+            int: The number of documents deleted
+        """
+        result = self.collection.delete_many(query)
 
         return result.deleted_count
 
