@@ -43,8 +43,8 @@ if prompt := st.chat_input("Ask Narelle a question..."):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # update backend's chat history
-    chatbot.set_chat_history(chat_history=st.session_state.messages)
+    # # update backend's chat history
+    # chatbot.set_chat_history(chat_history=st.session_state.messages)
 
     # Display user message in chat message container
     with st.chat_message("user"):
