@@ -25,7 +25,7 @@ def test_with_chatlog():
     # Load chatlog conversations
     chatlog = import_chatlog()
 
-    chatlog_conversations = chatlog["chatlog"][:3]
+    chatlog_conversations = chatlog["chatlog"][:300]
 
     # Load Ask Narelle chatbot
     chatbot = Narelle()
@@ -35,9 +35,9 @@ def test_with_chatlog():
 
     # Loop through chatlog conversations
     for i, conversation in enumerate(chatlog_conversations):
-        logger.info("Processing conversation "+ str(i+1))
 
         id = conversation["_id"]['$oid']
+        logger.info("Processing conversation "+ str(i)+ " with id: "+id)
 
         message_counter = 1
 
