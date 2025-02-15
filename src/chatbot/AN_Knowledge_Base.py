@@ -19,6 +19,18 @@ class AN_KB_Manager:
                         "api_version": os.environ.get("AZURE_OPENAI_API_VERSION")
                     }
 
+        azure_text_embedding_config={
+                        "azure_deployment": os.environ.get("TEXT_EMBEDDING_MODEL_DEPLOYMENT"),
+                        "api_key": os.environ.get("AZURE_OPENAI_APIKEY"),
+                        "endpoint": os.environ.get("AZURE_OPENAI_ENDPOINT"),
+                        "model": os.environ.get("TEXT_EMBEDDING_MODEL_NAME")
+                    }
+        
+        azure_ai_search_config = {
+                        "endpoint": os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
+                        "api_key": os.environ.get("AZURE_AI_SEARCH_API_KEY"),
+        }
+
         # Defines QnA kb manager
         self.qna_manager = QnAManager(db_connection_str=os.environ.get("AZURE_COSMOSDB_CONNECTION_STR"),
             db_name = "testDatabase",
@@ -27,12 +39,7 @@ class AN_KB_Manager:
             azure_openai_config=azure_openai_config)
 
         # Defines chatbot kb manager
-        self.kb = KnowledgeBaseManager(text_embedding_azure_deployment=os.environ.get("TEXT_EMBEDDING_MODEL_DEPLOYMENT"), 
-        azure_openai_api_key=os.environ.get("AZURE_OPENAI_APIKEY"), 
-        azure_openai_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"), 
-        text_embedding_model=os.environ.get("TEXT_EMBEDDING_MODEL_NAME"),
-        azure_ai_search_endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"), 
-        azure_ai_search_api_key=os.environ.get("AZURE_AI_SEARCH_API_KEY"),
+        self.kb = KnowledgeBaseManager(azure_text_embedding_config=azure_text_embedding_config, azure_ai_search_config=azure_ai_search_config,
         index_name=os.environ.get("AZURE_AI_SEARCH_INDEX_NAME"))
 
         # Defines index name
