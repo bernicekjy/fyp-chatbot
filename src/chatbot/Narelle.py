@@ -160,18 +160,9 @@ class Narelle:
             # get latest chat history with user query
             chat_history_with_query = self.get_latest_chat_history(num_chat_history=num_chat_history)
 
-            # rephrase query into a single question
-            rephrased_query = self.rephrase_to_single_question(chat_history=chat_history_with_query)
-            
-            if rephrased_query is not None:
-                # print latest_chat_history
-                logger.info("Rephrased query: "+rephrased_query)
-                # add question to unanswered questions
-                self.kb_manager.qna_manager.add_unanswered_question(question=rephrased_query)
-            else:
-                logger.error("Non-trivial query")
-        
-        # add chatbot response to chat history
+            # resolve non-trivial query
+            self.kb_manager.qna_manager.resolve_non_trivial_query(chat_history=chat_history_with_query)
+
         self.chat_history.append(chatbot_response)
 
         return {

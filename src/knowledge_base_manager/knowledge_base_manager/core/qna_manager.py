@@ -1,14 +1,33 @@
 from typing import List, Dict, Any
 from .database_manager import DatabaseManager
 from datetime import datetime
+from utils.logger import get_logger
+from langchain.callbacks import get_openai_callback
+from openai import BadRequestError
+from langchain_openai import AzureChatOpenAI
+import os
+
+# import logger
+logger = get_logger(__name__)
 
 class QnAManager:
     def __init__(self, db_connection_str:str, db_name:str, collection_name: str):
         """Initialise the QnAManager with a DatabaseManager instance
         """
 
+        # Defines the instance of AzureChatOpenAI class
+        self.llm = AzureChatOpenAI(
+            azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+            api_key=os.environ.get("AZURE_OPENAI_APIKEY"),
+            deployment_name=os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME"),
+            model_name=os.environ.get("AZURE_OPENAI_MODEL_NAME"),
+            api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
+            temperature=0,
+        )
+
         self.db_manager = DatabaseManager(db_connection_str=db_connection_str, db_name=db_name, collection_name=collection_name)
-    
+
+
     def add_unanswered_question(self, question:str)->bool:
         """Add a new unanswered question to the database
 
@@ -110,3 +129,81 @@ class QnAManager:
 
         
         return qna_str
+
+    def rephrase_to_single_question(self, chat_history:List[str]) -> str:
+        """
+        Rephrases the latest user query in the chat history to be a standalone question.
+
+        Args:
+            chat_history (List[str]): The conversation history including the latest user query.
+
+        Returns:
+            str: The rephrased standalone question, or None if an error occurs.
+
+        Raises:
+            BadRequestError: If an error occurs while invoking the language model.
+
+        Example:
+            chat_history = [
+            "User: How does the subscription model work?",
+            "Bot: The subscription model allows you to access premium features.",
+            "User: Can I cancel anytime?"
+            ]
+
+            Returns:
+            "Can I cancel the subscription anytime?"
+        """
+        
+        rephrase_prompt = f"""Given the following conversation and a follow up question, rephrase the latest user query to be a standalone query. Respond with only the rephrased question.
+
+                            Chat History:
+                            {chat_history}"""
+        
+        logger.info("chat_history: "+str(chat_history))
+
+        try:
+            # invoke LLM
+            with get_openai_callback() as cb:
+
+                response = self.llm.invoke(rephrase_prompt)
+
+                # logger.info(
+                #     f"=======[LLM COST] total cost: {cb.total_cost}; total tokens: {cb.total_tokens}"
+                # )
+
+                total_cost = cb.total_cost
+                total_tokens = cb.total_tokens
+
+            rephrased_question = response.content
+        except BadRequestError as e:
+            logger.error("Error occurred while rephrasing question: "+str(e))
+            return None
+
+        return rephrased_question
+
+    def resolve_non_trivial_query(self, chat_history: List[str]):
+        """
+        Resolves a non-trivial query by rephrasing the chat history into a single question and adding it to the list of unanswered questions.
+        Args:
+            chat_history (List[str]): The conversation history including the latest user query.
+        Example:
+            chat_history = [
+            "What is the capital of France?",
+            "I mean, where is the Eiffel Tower located?",
+            "Can you tell me the city where the Eiffel Tower is?"
+            ]
+        Returns:
+            None
+        """
+
+        # rephrase query into a single question
+        rephrased_query = self.rephrase_to_single_question(chat_history=chat_history)
+
+        if rephrased_query is not None:
+                # print latest_chat_history
+                logger.info("Rephrased query: "+rephrased_query)
+                # add question to unanswered questions
+                self.add_unanswered_question(question=rephrased_query)
+        else:
+            logger.error("Error in resolving non-trivial query")
+            
