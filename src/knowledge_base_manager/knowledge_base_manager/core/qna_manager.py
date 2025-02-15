@@ -11,19 +11,82 @@ import os
 logger = get_logger(__name__)
 
 class QnAManager:
-    def __init__(self, db_connection_str:str, db_name:str, collection_name: str):
-        """Initialise the QnAManager with a DatabaseManager instance
+    def __init__(self, db_connection_str: str, db_name: str, collection_name: str, rephrase_question:bool = False, azure_openai_config: Dict[str, str]=None):
+        """
+        Initializes the QnAManager with database connection details and optional Azure OpenAI configuration.
+        Args:
+            db_connection_str (str): The connection string for the database.
+            db_name (str): The name of the database.
+            collection_name (str): The name of the collection within the database.
+            rephrase_question (bool, optional): Flag to enable or disable question rephrasing. Defaults to False.
+            azure_openai_config (Dict[str, str], optional): Configuration dictionary for Azure OpenAI. Defaults to None.
+                Expected keys:
+                    - "endpoint": The endpoint URL for Azure OpenAI.
+                    - "api_key": The API key for Azure OpenAI.
+                    - "deployment_name": The deployment name for Azure OpenAI.
+                    - "model_name": The model name for Azure OpenAI.
+                    - "api_version": The API version for Azure OpenAI.
+        Examples:
+            >>> qna_manager = QnAManager(
+                    db_connection_str="mongodb://localhost:27017/",
+                    db_name="mydatabase",
+                    collection_name="mycollection",
+                    rephrase_question=True,
+                    azure_openai_config={
+                        "endpoint": "https://example-endpoint.openai.azure.com/",
+                        "api_key": "your_api_key",
+                        "deployment_name": "your_deployment_name",
+                        "model_name": "your_model_name",
+                        "api_version": "2023-10-01"
+                    })
+            >>> qna_manager = QnAManager(
+                    db_connection_str="mongodb://localhost:27017/",
+                    db_name="mydatabase",
+                    collection_name="mycollection")
         """
 
-        # Defines the instance of AzureChatOpenAI class
-        self.llm = AzureChatOpenAI(
-            azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-            api_key=os.environ.get("AZURE_OPENAI_APIKEY"),
-            deployment_name=os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME"),
-            model_name=os.environ.get("AZURE_OPENAI_MODEL_NAME"),
-            api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
-            temperature=0,
-        )
+
+
+        self.rephrase_question = rephrase_question
+
+        # If LLM configs provided, initialise Azure OpenAI LLM
+        if azure_openai_config is not None:
+            # Initialise Azure OpenAI LLM
+            azure_openai_endpoint = azure_openai_config.get("endpoint")
+            azure_openai_api_key = azure_openai_config.get("api_key")
+            azure_openai_deployment_name = azure_openai_config.get("deployment_name")
+            azure_openai_model_name = azure_openai_config.get("model_name")
+            azure_opanai_api_version = azure_openai_config.get("api_version")
+
+            self.llm = AzureChatOpenAI(
+                azure_endpoint=azure_openai_endpoint,
+                api_key=azure_openai_api_key,
+                deployment_name=azure_openai_deployment_name,
+                model_name=azure_openai_model_name,
+                api_version=azure_opanai_api_version,
+                temperature=0,
+            )
+    
+            logger.info("Azure OpenAI LLM initialised successfully.")
+        else:
+
+            # if LLM configs not provided, do not allow rephrasing
+            if self.rephrase_question is True:
+                logger.error("Azure OpenAI LLM not initialised. Rephrasing not allowed. To allow rephrasing, provide Azure OpenAI LLM configs.")
+
+                self.rephrase_question = False
+            else:
+                logger.info("Azure OpenAI LLM not initialised.")
+
+        # # Defines the instance of AzureChatOpenAI class
+        # self.llm = AzureChatOpenAI(
+        #     azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+        #     api_key=os.environ.get("AZURE_OPENAI_APIKEY"),
+        #     deployment_name=os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME"),
+        #     model_name=os.environ.get("AZURE_OPENAI_MODEL_NAME"),
+        #     api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
+        #     temperature=0,
+        # )
 
         self.db_manager = DatabaseManager(db_connection_str=db_connection_str, db_name=db_name, collection_name=collection_name)
 
@@ -183,7 +246,7 @@ class QnAManager:
 
     def resolve_non_trivial_query(self, chat_history: List[str]):
         """
-        Resolves a non-trivial query by rephrasing the chat history into a single question and adding it to the list of unanswered questions.
+        Resolves a non-trivial query by rephrasing the chat history into a single question (if LLM configs provided) and adding it to the list of unanswered questions.
         Args:
             chat_history (List[str]): The conversation history including the latest user query.
         Example:
@@ -196,14 +259,17 @@ class QnAManager:
             None
         """
 
-        # rephrase query into a single question
-        rephrased_query = self.rephrase_to_single_question(chat_history=chat_history)
+        if self.rephrase_question is True:
+            # rephrase query into a single question with LLM
+            query_to_add = self.rephrase_to_single_question(chat_history=chat_history)
 
-        if rephrased_query is not None:
-                # print latest_chat_history
-                logger.info("Rephrased query: "+rephrased_query)
-                # add question to unanswered questions
-                self.add_unanswered_question(question=rephrased_query)
+            logger.info("Query rephrased to: "+query_to_add)
         else:
-            logger.error("Error in resolving non-trivial query")
+            # use latest question as query
+            query_to_add = chat_history[-1]
+
+            logger.info("Query to add: "+query_to_add)
+
+
+        self.add_unanswered_question(question=query_to_add)
             

@@ -11,10 +11,20 @@ load_dotenv()
 class AN_KB_Manager:
     def __init__(self):
 
+        azure_openai_config={
+                        "endpoint": os.environ.get("AZURE_OPENAI_ENDPOINT"),
+                        "api_key": os.environ.get("AZURE_OPENAI_APIKEY"),
+                        "deployment_name": os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME"),
+                        "model_name": os.environ.get("AZURE_OPENAI_MODEL_NAME"),
+                        "api_version": os.environ.get("AZURE_OPENAI_API_VERSION")
+                    }
+
         # Defines QnA kb manager
         self.qna_manager = QnAManager(db_connection_str=os.environ.get("AZURE_COSMOSDB_CONNECTION_STR"),
-            db_name = "qnaDatabase",
-            collection_name = "questions")
+            db_name = "testDatabase",
+            collection_name = "testQuestions",
+            rephrase_question=True,
+            azure_openai_config=azure_openai_config)
 
         # Defines chatbot kb manager
         self.kb = KnowledgeBaseManager(text_embedding_azure_deployment=os.environ.get("TEXT_EMBEDDING_MODEL_DEPLOYMENT"), 
