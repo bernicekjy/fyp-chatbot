@@ -21,7 +21,7 @@ class QnAManager:
         # add current time
         now = datetime.now()
 
-        document = {"question": question, "answer": "", "status": "Unanswered", "timestamp": now}
+        document = {"question": question, "answer": "", "status": "Unanswered", "timestamp": now, "irrelevant": False}
         return self.db_manager.insert_document(document)
 
     def add_answer_to_question(self, question:str, answer:str)->bool:
@@ -49,7 +49,7 @@ class QnAManager:
         :return: True if the question is found and updated
         """
         query = {"question": question}
-        update = {"status": "irrelevant"}
+        update = {"status": "Irrelevant", "irrelevant":True}
         return self.db_manager.update_document(query=query, update=update)
 
     def get_answered_questions(self) -> List[Dict[str, Any]]:
@@ -58,7 +58,7 @@ class QnAManager:
 
         :return: A list of answered question documents
         """
-        query = {"status": "Answered"}
+        query = {"status": "Answered", "irrelevant": False}
         return self.db_manager.find_documents(query)
 
     def get_unanswered_questions(self) -> List[Dict[str, Any]]:
@@ -77,6 +77,15 @@ class QnAManager:
         :return: A list of all question documents
         """
         return self.db_manager.find_documents()
+    
+    def get_relevant_questions(self) -> List[Dict[str, Any]]:
+        """
+        Retrieve all relevant questions from the database.
+
+        :return: A list of relevant question documents
+        """
+        query = {"irrelevant": False}
+        return self.db_manager.find_documents(query)
     
     def generate_qna_string(self) -> str:
         """
