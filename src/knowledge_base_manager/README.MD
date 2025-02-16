@@ -6,9 +6,9 @@ The `knowledge_base_manager` Python library provides functionality for managing 
 
 ## Features
 
-- **QnA Management**: Manage questions and answers in a structured format.
-- **Azure AI Search Integration**: Utilize Azure Cognitive Search for indexing and searching documents.
-- **OpenAI Integration**: Leverage OpenAI models for text embedding and other NLP tasks.
+- **QnA Management 🤝**: Manage questions and answers in a structured format.
+- **Azure AI Search Integration 🧠**: Utilize Azure AI Search for indexing and searching documents.
+- **OpenAI Integration 💬**: Leverage OpenAI models for text embedding and other NLP tasks.
 
 ## Installation
 
@@ -23,14 +23,21 @@ poetry install
 Ensure you have the following environment variables set up in your `.env` file:
 
 ```env
+# OpenAI Service Configuration
 AZURE_OPENAI_ENDPOINT=<your-azure-openai-endpoint>
 AZURE_OPENAI_APIKEY=<your-azure-openai-apikey>
 AZURE_OPENAI_DEPLOYMENT_NAME=<your-azure-openai-deployment-name>
 AZURE_OPENAI_MODEL_NAME=<your-azure-openai-model-name>
 AZURE_OPENAI_API_VERSION=<your-azure-openai-api-version>
+
+# Azure AI Search Service Configuration
 AZURE_AI_SEARCH_ENDPOINT=<your-azure-ai-search-endpoint>
 AZURE_AI_SEARCH_API_KEY=<your-azure-ai-search-api-key>
+
+# Azure Cosmos DB Configuration
 AZURE_COSMOSDB_CONNECTION_STR=<your-azure-cosmosdb-connection-str>
+
+# Text Embedding Model Configuration
 TEXT_EMBEDDING_MODEL_DEPLOYMENT=<your-text-embedding-model-deployment>
 TEXT_EMBEDDING_MODEL_NAME=<your-text-embedding-model-name>
 ```
@@ -71,7 +78,7 @@ kb_manager = KnowledgeBaseManager(
 )
 ```
 
-### Adding Documents to the Knowledge Base
+### Adding Documents
 
 ```python
 documents = [
@@ -82,18 +89,72 @@ documents = [
 kb_manager.add_or_update_docs(documents)
 ```
 
-### Fetching and Indexing Data from CosmosDB
+### Fetching and Indexing Data
 
 ```python
 kb_manager.fetch_and_index_cosmosdb_data(qna_manager=qna_manager)
 ```
 
-### Deleting Documents from the Knowledge Base
+### Deleting Documents
 
 ```python
 kb_manager.delete_embeddings_function(fileName="document_id")
 ```
 
+
+### Using QnAManager
+
+#### Adding Unanswered Questions
+
+```python
+# Add an unanswered question to the database
+qna_manager.add_unanswered_question("What is the course duration?")
+```
+
+#### Adding Answers to Questions
+
+```python
+# Add an answer to an existing question in the database
+qna_manager.add_answer_to_question(
+    question="What is the course duration?",
+    answer="The course duration is 10 weeks."
+)
+```
+
+#### Marking Questions as Irrelevant
+
+```python
+# Mark a question as irrelevant
+qna_manager.mark_question_irrelevant("What is the course duration?")
+```
+
+#### Fetching All Questions
+
+```python
+# Retrieve all questions from the database
+all_questions = qna_manager.get_all_questions()
+```
+
+#### Fetching Relevant Questions
+
+```python
+# Retrieve all relevant questions from the database
+relevant_questions = qna_manager.get_relevant_questions()
+```
+
+#### Fetching Answered Questions
+
+```python
+# Retrieve all answered questions from the database
+answered_questions = qna_manager.get_answered_questions()
+```
+
+#### Fetching Unanswered Questions
+
+```python
+# Retrieve all unanswered questions from the database
+unanswered_questions = qna_manager.get_unanswered_questions()
+```
 ## Example Application
 
-Refer to the `chatbot` directory for an example application that demonstrates how to use the `knowledge_base_manager` library in a Streamlit-based interface.
+Refer to the `chatbot` [directory](https://github.com/bernicekjy/fyp-chatbot/tree/main/src/chatbot) at the [sample application with Ask Narelle](https://github.com/bernicekjy/fyp-chatbot) for an example that demonstrates how to use the `knowledge_base_manager` library in a Streamlit-based interface.
