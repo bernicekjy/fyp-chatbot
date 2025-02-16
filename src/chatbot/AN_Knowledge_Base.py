@@ -36,6 +36,7 @@ class AN_KB_Manager:
             db_name = "testDatabase",
             collection_name = "testQuestions",
             rephrase_question=True,
+            categorise_question=True,
             azure_openai_config=azure_openai_config)
 
         # Defines chatbot kb manager

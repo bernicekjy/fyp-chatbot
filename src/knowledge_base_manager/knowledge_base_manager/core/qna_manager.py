@@ -11,7 +11,7 @@ import os
 logger = get_logger(__name__)
 
 class QnAManager:
-    def __init__(self, db_connection_str: str, db_name: str, collection_name: str, rephrase_question:bool = False, azure_openai_config: Dict[str, str]=None):
+    def __init__(self, db_connection_str: str, db_name: str, collection_name: str, rephrase_question:bool = False, categorise_question:bool=False, azure_openai_config: Dict[str, str]=None):
         """
         Initializes the QnAManager with database connection details and optional Azure OpenAI configuration.
         Args:
@@ -19,6 +19,7 @@ class QnAManager:
             db_name (str): The name of the database.
             collection_name (str): The name of the collection within the database.
             rephrase_question (bool, optional): Flag to enable or disable question rephrasing. Defaults to False.
+            categorise_question (bool, optional): Flag to enable or disable question categorisation. Defaults to False.
             azure_openai_config (Dict[str, str], optional): Configuration dictionary for Azure OpenAI. Defaults to None.
                 Expected keys:
                     - "endpoint": The endpoint URL for Azure OpenAI.
@@ -46,8 +47,9 @@ class QnAManager:
         """
 
 
-
+        # Set flags for LLM features
         self.rephrase_question = rephrase_question
+        self.categorise_question = categorise_question
 
         # If LLM configs provided, initialise Azure OpenAI LLM
         if azure_openai_config is not None:
@@ -70,28 +72,24 @@ class QnAManager:
             logger.info("Azure OpenAI LLM initialised successfully.")
         else:
 
+            logger.info("Azure OpenAI LLM not initialised.")
+
             # if LLM configs not provided, do not allow rephrasing
             if self.rephrase_question is True:
-                logger.error("Azure OpenAI LLM not initialised. Rephrasing not allowed. To allow rephrasing, provide Azure OpenAI LLM configs.")
+                logger.error("Rephrasing not allowed. To allow rephrasing, please provide Azure OpenAI LLM configs.")
 
                 self.rephrase_question = False
-            else:
-                logger.info("Azure OpenAI LLM not initialised.")
 
-        # # Defines the instance of AzureChatOpenAI class
-        # self.llm = AzureChatOpenAI(
-        #     azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-        #     api_key=os.environ.get("AZURE_OPENAI_APIKEY"),
-        #     deployment_name=os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME"),
-        #     model_name=os.environ.get("AZURE_OPENAI_MODEL_NAME"),
-        #     api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
-        #     temperature=0,
-        # )
+            # if LLM configs not provided, do not allow categorising questions
+            if self.categorise_question is True:
+                logger.error("Categorising questions not allowed. To allow rephrasing, please provide Azure OpenAI LLM configs.")
+
+                self.categorise_question = False
 
         self.db_manager = DatabaseManager(db_connection_str=db_connection_str, db_name=db_name, collection_name=collection_name)
 
 
-    def add_unanswered_question(self, question:str)->bool:
+    def add_unanswered_question(self, question:str, category:str=None)->bool:
         """Add a new unanswered question to the database
 
         Args:
@@ -103,7 +101,10 @@ class QnAManager:
         # add current time
         now = datetime.now()
 
-        document = {"question": question, "answer": "", "status": "Unanswered", "timestamp": now, "irrelevant": False}
+        if category is None:
+            document = {"question": question, "answer": "", "status": "Unanswered", "timestamp": now, "irrelevant": False}
+        else:
+            document = {"question": question, "answer": "", "status": "Unanswered", "category": category, "timestamp": now, "irrelevant": False, "category": category}
         return self.db_manager.insert_document(document)
 
     def add_answer_to_question(self, question:str, answer:str)->bool:
@@ -244,6 +245,75 @@ class QnAManager:
 
         return rephrased_question
 
+    def get_question_category(self,user_question:str)->str:
+        """
+        Categorizes a student's question into one of several predefined categories.
+
+        Args:
+            user_question (str): The question asked by the student.
+        Returns:
+            str: The category name
+        """
+
+        categorise_prompt = f"""You are a helpful assistant for a course instructor. Your task is to categorize student questions into one of the following categories. You should return ONLY the category name in CAPITAL LETTERS. Do not explain your reasoning or provide additional text. Choose the most appropriate category from the list below:
+
+                                CATEGORIES:
+                                - ADMIN: Questions about deadlines, submission processes, group work policies, lab sites, or assignment logistics.
+                                - TECHNICAL: Questions about programming errors, technical setup, or software issues.
+                                - CONTENT: Questions about course material, lecture content, concepts, or explanations of topics.
+                                - EVALUATION: Questions about grading criteria, marking schemes, or assessment feedback.
+                                - RESOURCE: Questions requesting additional resources, study materials, or sample solutions.
+                                - UNCATEGORISED: Questions that do not clearly fit into any of the above categories.
+                                - IRRELEVANT: Questions that are unrelated to the course or inappropriate.
+
+                                EXAMPLE 1
+                                Question: "Where do I submit the mini project?"
+                                Return: ADMIN
+
+                                EXAMPLE 2
+                                Question: "How do I resolve this error when installing the library?"
+                                Return: TECHNICAL
+
+                                EXAMPLE 3
+                                Question: "Can you explain the concept of dynamic programming again?"
+                                Return: CONTENT
+
+                                EXAMPLE 4
+                                Question: "How many marks is the final project worth?"
+                                Return: EVALUATION
+
+                                EXAMPLE 5
+                                Question: "Do you have any sample solutions from last year’s exam?"
+                                Return: RESOURCE
+
+                                EXAMPLE 6
+                                Question: "What’s the best pizza place near campus?"
+                                Return: IRRELEVANT
+
+                                EXAMPLE 7
+                                Question: "I am confused about something but I’m not sure how to explain it."
+                                Return: UNCATEGORISED
+
+                                NOW CATEGORIZE THE FOLLOWING QUESTION:
+                                Question: "{user_question}"
+                                Return:
+
+                                """
+
+        # invoke LLM
+        with get_openai_callback() as cb:
+
+            response = self.llm.invoke(categorise_prompt)
+
+            # logger.info(
+            #     f"=======[LLM COST] total cost: {cb.total_cost}; total tokens: {cb.total_tokens}"
+            # )
+
+            total_cost = cb.total_cost
+            total_tokens = cb.total_tokens
+                
+        return response.content
+
     def resolve_non_trivial_query(self, chat_history: List[str]):
         """
         Resolves a non-trivial query by rephrasing the chat history into a single question (if LLM configs provided) and adding it to the list of unanswered questions.
@@ -259,6 +329,7 @@ class QnAManager:
             None
         """
 
+        # Rephrase question if flag is set
         if self.rephrase_question is True:
             # rephrase query into a single question with LLM
             query_to_add = self.rephrase_to_single_question(chat_history=chat_history)
@@ -270,6 +341,15 @@ class QnAManager:
 
             logger.info("Query to add: "+query_to_add)
 
+        # Categorise question if flag is set
+        if self.categorise_question is True:
+            # categorise the question
+            category = self.get_question_category(user_question=query_to_add)
 
-        self.add_unanswered_question(question=query_to_add)
+            logger.info("Category: "+category)
+
+            # add question to database
+            self.add_unanswered_question(question=query_to_add, category=category)
+        else:
+            self.add_unanswered_question(question=query_to_add)
             

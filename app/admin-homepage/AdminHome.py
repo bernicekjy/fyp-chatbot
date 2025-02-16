@@ -37,11 +37,12 @@ columns_config = {
     'answer' : st.column_config.TextColumn('Answer', width='large'),
     'status' : st.column_config.TextColumn('Status', width='small'),
     'timestamp' : st.column_config.DatetimeColumn('Timestamp', width='small'),
-    'irrelevant': st.column_config.CheckboxColumn('Mark as irrelevant', width='small')
+    'irrelevant': st.column_config.CheckboxColumn('Mark as irrelevant', width='small'),
+    'category': st.column_config.TextColumn('Category', width='small')
 }
 
 # define column order
-column_order = ("timestamp","question", "answer", "status", 'irrelevant')
+column_order = ("timestamp","question", "answer", "status", "category", 'irrelevant')
 
 # # Initialise session state for checkbox
 # if "hide_irrelevant" not in st.session_state:
