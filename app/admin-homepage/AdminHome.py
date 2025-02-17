@@ -42,7 +42,7 @@ columns_config = {
 }
 
 # define column order
-column_order = ("timestamp","question", "answer", "status", "category", 'irrelevant')
+column_order = ("status", "timestamp","question", "answer",  "category", 'irrelevant')
 
 # # Initialise session state for checkbox
 # if "hide_irrelevant" not in st.session_state:
@@ -62,17 +62,21 @@ styled_df = st.session_state["qna_df"].style.map(
     status_color_formatter, subset=pd.IndexSlice[:, ["status"]]
 )
 
-# dsplay the DataFrame
-display_df = st.data_editor(
-                styled_df,  
-                key="all_qna_list",  
-                column_config=columns_config,  
-                column_order=column_order,  
-                disabled=["status", "timestamp"],  # make "status" column non-editable
-                use_container_width=True,
-                hide_index=True,
-                height=700,
-                )
+try:
+    # display the DataFrame
+    display_df = st.data_editor(
+                    styled_df,  
+                    key="all_qna_list",  
+                    column_config=columns_config,  
+                    column_order=column_order,  
+                    disabled=["status", "timestamp"],  # make "status" column non-editable
+                    use_container_width=True,
+                    hide_index=True,
+                    height=700,
+                    )
+except KeyError:
+    st.markdown("<p style='color:grey;'>No data to display.</p>", unsafe_allow_html=True)
+
 
 # # Checkbox with persistent state
 # hide_irrelevant = st.checkbox(
