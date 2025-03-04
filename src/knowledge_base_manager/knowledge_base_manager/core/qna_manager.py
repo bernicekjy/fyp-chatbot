@@ -104,7 +104,11 @@ class QnAManager:
         if category is None:
             document = {"question": question, "answer": "", "status": "Unanswered", "timestamp": now, "irrelevant": False}
         else:
-            document = {"question": question, "answer": "", "status": "Unanswered", "category": category, "timestamp": now, "irrelevant": False, "category": category}
+            if category == "IRRELEVANT":
+                document = {"question": question, "answer": "", "status": "Unanswered", "category": category, "timestamp": now, "irrelevant": True}
+            else:
+                document = {"question": question, "answer": "", "status": "Unanswered", "category": category, "timestamp": now, "irrelevant": False}
+
         return self.db_manager.insert_document(document)
 
     def add_answer_to_question(self, question:str, answer:str)->bool:
@@ -331,10 +335,14 @@ class QnAManager:
 
         # Rephrase question if flag is set
         if self.rephrase_question is True:
-            # rephrase query into a single question with LLM
-            query_to_add = self.rephrase_to_single_question(chat_history=chat_history)
+            try:
+                # rephrase query into a single question with LLM
+                query_to_add = self.rephrase_to_single_question(chat_history=chat_history)
 
-            logger.info("Query rephrased to: "+query_to_add)
+                logger.info("Query rephrased to: "+query_to_add)
+            except Exception as e:
+                logger.error("Error occurred while rephrasing question.")
+                return
         else:
             # use latest question as query
             query_to_add = chat_history[-1]

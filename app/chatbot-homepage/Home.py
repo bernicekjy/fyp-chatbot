@@ -43,8 +43,10 @@ if prompt := st.chat_input("Ask Narelle a question..."):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # # update backend's chat history
-    # chatbot.set_chat_history(chat_history=st.session_state.messages)
+    # Ask chatbot question
+    response = chatbot.answer_this(query=prompt)
+    chatbot_response = response["chatbot_response"]
+    context = response["context"]
 
     # Display user message in chat message container
     with st.chat_message("user"):
@@ -52,12 +54,21 @@ if prompt := st.chat_input("Ask Narelle a question..."):
 
     # Display chatbot message
     with st.chat_message("assistant"):
-        response = chatbot.answer_this(query=prompt)["chatbot_response"]
+        
+        st.write(chatbot_response)
 
-        st.write(response)
+        with st.popover("View context used"):
+            st.write(context)
+        
 
-    st.session_state.messages.append({"role": "assistant", "content": response})
+    st.session_state.messages.append({"role": "assistant", "content": chatbot_response})
 
-    # update backend's chat history
-    chatbot.set_chat_history(chat_history=st.session_state.messages)
+    # # update backend's chat history
+    # chat_history_content = [message["content"] for message in st.session_state.messages]
+    # chatbot.set_chat_history(chat_history=chat_history_content)
+
+    # print("Chat history: ", chatbot.chat_history)
+
+
+# st.write(st.session_state.messages)
 

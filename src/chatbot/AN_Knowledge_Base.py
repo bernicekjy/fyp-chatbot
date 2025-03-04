@@ -31,20 +31,23 @@ class AN_KB_Manager:
                         "api_key": os.environ.get("AZURE_AI_SEARCH_API_KEY"),
         }
 
+        # Defines index name
+        self.index_name = "fyp-test-2"
+
+
         # Defines QnA kb manager
         self.qna_manager = QnAManager(db_connection_str=os.environ.get("AZURE_COSMOSDB_CONNECTION_STR"),
             db_name = "testDatabase",
-            collection_name = "testQuestions",
+            collection_name = "testQuestions2",
             rephrase_question=True,
             categorise_question=True,
             azure_openai_config=azure_openai_config)
 
         # Defines chatbot kb manager
         self.kb = KnowledgeBaseManager(azure_text_embedding_config=azure_text_embedding_config, azure_ai_search_config=azure_ai_search_config,
-        index_name=os.environ.get("AZURE_AI_SEARCH_INDEX_NAME"))
+        index_name=self.index_name)
 
-        # Defines index name
-        self.index_name = os.environ.get("AZURE_AI_SEARCH_INDEX_NAME")
+        
 
     def sync_qna_to_kb(self):
         # generate a new qna document and update kb

@@ -15,7 +15,7 @@ from azure.search.documents.indexes.models import (
 )
 import os
 from langchain.text_splitter import CharacterTextSplitter
-from azure.search.documents import SearchClient
+from azure.search.documents import SearchClient, SearchItemPaged
 import uuid
 from pathlib import Path
 from dotenv import load_dotenv
@@ -23,6 +23,7 @@ from knowledge_base_manager.utils.document_loaders import load_document, strings
 from knowledge_base_manager.core.qna_manager import QnAManager
 from utils.logger import get_logger
 import traceback
+from typing import Dict 
 # Load logger
 logger = get_logger(__name__)
 
@@ -65,13 +66,13 @@ class KnowledgeBaseManager:
         # Defines instance of SearchIndexClient class
         self.search_index_client = SearchIndexClient(
                 endpoint=azure_ai_search_config["endpoint"],
-                credential=azure_ai_search_config["api_key"],
+                credential=AzureKeyCredential(azure_ai_search_config["api_key"]),
             )
 
         # create SearchClient for search function
         self.search_client = SearchClient(
                 endpoint=azure_ai_search_config["endpoint"],
-                credential=azure_ai_search_config["api_key"],
+                credential=AzureKeyCredential(azure_ai_search_config["api_key"]),
                 index_name=index_name
             )
         
@@ -156,7 +157,7 @@ class KnowledgeBaseManager:
             # Creates the new search index or updates it if it already exists
             self.search_index_client.create_or_update_index(index=searchindex)
 
-
+            logger.info(f"Index {self.index_name} created successfully.")
             return self.index_name
         except Exception as e:
             return e
@@ -182,7 +183,7 @@ class KnowledgeBaseManager:
         logger.info("Adding or updating documents in the knowledge base...")
         search_client = SearchClient(
                 endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-                index_name=os.environ.get("AZURE_AI_SEARCH_INDEX_NAME"),
+                index_name=self.index_name,
                 credential=AzureKeyCredential(
                     os.environ.get("AZURE_AI_SEARCH_API_KEY")
                 ),
@@ -367,12 +368,29 @@ class KnowledgeBaseManager:
         """
 
         try:
-            self.search_index_client.delete_index(self.index_name)
+            self.search_index_client.delete_index(index=self.index_name)
+            logger.info(f"Index {self.index_name} deleted successfully.")
             return True
         except Exception as e:
-            print(f"An error occurred: {e}")
+            logger.error(f"An error occurred: {e}")
             return False
 
+    def similarity_search(self, query, top_k=5) -> SearchItemPaged[Dict]:
+        """
+        Performs a similarity search on the knowledge base using the provided query.
+
+        Args:
+            query (str): The query to search for in the knowledge base.
+            top_k (int): The number of top results to return. Defaults to 5.
+
+        Returns:
+            list: A list of dictionaries containing the top k search results.
+        """
+
+        # Perform the search
+        results = self.search_client.search(search_text=query, top=top_k)
+
+        return results
 
     
 

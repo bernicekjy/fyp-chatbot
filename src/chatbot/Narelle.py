@@ -30,10 +30,13 @@ class Narelle:
             temperature=0,
         )
 
+        # Defines knowledge base manager
+        self.kb_manager = AN_KB_Manager()
+
         # Defines retriever used
         self.search_client = SearchClient(
             endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-            index_name="fyp-test",
+            index_name=self.kb_manager.index_name,
             credential=AzureKeyCredential(os.environ.get("AZURE_AI_SEARCH_API_KEY")),
         )
 
@@ -58,8 +61,7 @@ class Narelle:
         # Initialise chat history
         self.chat_history = []
 
-        # Defines knowledge base manager
-        self.kb_manager = AN_KB_Manager()
+
 
         # Cost tracking
         self.total_api_cost = 0
@@ -95,15 +97,23 @@ class Narelle:
     def set_chat_history(self, chat_history: List[str]):
         self.chat_history = chat_history
 
+        logger.info("Chat history set to: " + str(self.chat_history))
+
     def clear_chat_history(self):
         self.chat_history = []
 
-    def get_latest_chat_history(self, num_chat_history):
+    def get_latest_chat_history(self, num_chat_history=6):
+        logger.info("Chat history from fn: " + str(self.chat_history))
+
         # extract top few chats
         latest_chat_history = self.chat_history
+        
 
         if len(latest_chat_history) > num_chat_history:
             latest_chat_history = self.chat_history[(num_chat_history * -1) :]
+            logger.info("Trimmed")
+
+        logger.info("Latest chat history: " + str(latest_chat_history))
 
         return latest_chat_history
 
@@ -113,6 +123,7 @@ class Narelle:
 
         context_string = "\n\n---------------\n".join(context)
 
+        logger.info("Chat history: "+str(self.chat_history))
         # extract top few chats
         latest_chat_history = self.get_latest_chat_history(
             num_chat_history=num_chat_history
@@ -165,6 +176,8 @@ class Narelle:
 
         self.chat_history.append(chatbot_response)
 
+        logger.info("Chat history 2: "+str(self.chat_history))
+
         return {
             "chatbot_response": chatbot_response,
             "context": context_string,
@@ -172,34 +185,6 @@ class Narelle:
             "tokens": total_tokens,
         }
     
-    def rephrase_to_single_question(self, chat_history):
-        
-        rephrase_prompt = f"""Given the following conversation and a follow up question, rephrase the latest user query to be a standalone query. Respond with only the rephrased question.
-
-                            Chat History:
-                            {chat_history}"""
-        
-        logger.info("chat_history: "+str(chat_history))
-
-        try:
-            # invoke LLM
-            with get_openai_callback() as cb:
-
-                response = self.llm.invoke(rephrase_prompt)
-
-                # logger.info(
-                #     f"=======[LLM COST] total cost: {cb.total_cost}; total tokens: {cb.total_tokens}"
-                # )
-
-                total_cost = cb.total_cost
-                total_tokens = cb.total_tokens
-
-            rephrased_question = response.content
-        except BadRequestError as e:
-            logger.error("Error occurred while rephrasing question: "+str(e))
-            return None
-
-        return rephrased_question
 
 if __name__ == "__main__":
     bot = Narelle()

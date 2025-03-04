@@ -25,7 +25,7 @@ def test_with_chatlog():
     # Load chatlog conversations
     chatlog = import_chatlog()
 
-    chatlog_conversations = chatlog["chatlog"][:300]
+    chatlog_conversations = chatlog["chatlog"][200:700]
 
     # Load Ask Narelle chatbot
     chatbot = Narelle()
@@ -73,6 +73,6 @@ def test_with_chatlog():
     # export to csv
     test_results_dir = "test_results"
 
-    df.to_csv(path_or_buf=test_results_dir+os.sep+"basic_indexing_results.csv", index=False)
+    df.to_csv(path_or_buf=test_results_dir+os.sep+"test_results_chatlog.csv", index=False)
 
 test_with_chatlog()
