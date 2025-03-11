@@ -4,75 +4,60 @@ from datetime import datetime
 from utils.logger import get_logger
 from langchain.callbacks import get_openai_callback
 from openai import BadRequestError
-from langchain_openai import AzureChatOpenAI
+from langchain_core.language_models import BaseLanguageModel
 import os
 
 # import logger
 logger = get_logger(__name__)
 
 class QnAManager:
-    def __init__(self, db_connection_str: str, db_name: str, collection_name: str, rephrase_question:bool = False, categorise_question:bool=False, azure_openai_config: Dict[str, str]=None):
+    def __init__(self, db_connection_str: str, db_name: str, collection_name: str, rephrase_question:bool = False, categorise_question:bool=False, llm:BaseLanguageModel=None):
         """
-        Initializes the QnAManager with database connection details and optional Azure OpenAI configuration.
+        Initializes the QnAManager with the specified database connection string, database name, and collection name.
+
         Args:
             db_connection_str (str): The connection string for the database.
             db_name (str): The name of the database.
             collection_name (str): The name of the collection within the database.
-            rephrase_question (bool, optional): Flag to enable or disable question rephrasing. Defaults to False.
-            categorise_question (bool, optional): Flag to enable or disable question categorisation. Defaults to False.
-            azure_openai_config (Dict[str, str], optional): Configuration dictionary for Azure OpenAI. Defaults to None.
-                Expected keys:
-                    - "endpoint": The endpoint URL for Azure OpenAI.
-                    - "api_key": The API key for Azure OpenAI.
-                    - "deployment_name": The deployment name for Azure OpenAI.
-                    - "model_name": The model name for Azure OpenAI.
-                    - "api_version": The API version for Azure OpenAI.
-        Examples:
-            >>> qna_manager = QnAManager(
-                    db_connection_str="mongodb://localhost:27017/",
-                    db_name="mydatabase",
-                    collection_name="mycollection",
-                    rephrase_question=True,
-                    azure_openai_config={
-                        "endpoint": "https://example-endpoint.openai.azure.com/",
-                        "api_key": "your_api_key",
-                        "deployment_name": "your_deployment_name",
-                        "model_name": "your_model_name",
-                        "api_version": "2023-10-01"
-                    })
-            >>> qna_manager = QnAManager(
-                    db_connection_str="mongodb://localhost:27017/",
-                    db_name="mydatabase",
-                    collection_name="mycollection")
-        """
+            rephrase_question (bool, optional): Flag to indicate if questions should be rephrased. Defaults to False.
+            categorise_question (bool, optional): Flag to indicate if questions should be categorized. Defaults to False.
+            llm (BaseLanguageModel, optional): An instance of a language model to be used. Defaults to None.
 
+        Example:
+
+            azure_openai_config = {
+                "endpoint": "https://example-endpoint.openai.azure.com/",
+                "api_key": "your_api_key",
+                "deployment_name": "your_deployment_name",
+                "model_name": "your_model_name",
+                "api_version": "2023-10-01"
+            }
+
+            llm = AzureChatOpenAI(config=azure_openai_config)
+
+            qna_manager = QnAManager(
+                db_connection_str="mongodb://localhost:27017/",
+                db_name="mydatabase",
+                collection_name="qna_collection",
+                rephrase_question=True,
+                categorise_question=True,
+                llm=llm
+            )
+        """
 
         # Set flags for LLM features
         self.rephrase_question = rephrase_question
         self.categorise_question = categorise_question
 
         # If LLM configs provided, initialise Azure OpenAI LLM
-        if azure_openai_config is not None:
-            # Initialise Azure OpenAI LLM
-            azure_openai_endpoint = azure_openai_config.get("endpoint")
-            azure_openai_api_key = azure_openai_config.get("api_key")
-            azure_openai_deployment_name = azure_openai_config.get("deployment_name")
-            azure_openai_model_name = azure_openai_config.get("model_name")
-            azure_opanai_api_version = azure_openai_config.get("api_version")
+        if llm is not None:
 
-            self.llm = AzureChatOpenAI(
-                azure_endpoint=azure_openai_endpoint,
-                api_key=azure_openai_api_key,
-                deployment_name=azure_openai_deployment_name,
-                model_name=azure_openai_model_name,
-                api_version=azure_opanai_api_version,
-                temperature=0,
-            )
+            self.llm = llm
     
-            logger.info("Azure OpenAI LLM initialised successfully.")
+            logger.info("LLM initialised.")
         else:
 
-            logger.info("Azure OpenAI LLM not initialised.")
+            logger.info("LLM not initialised.")
 
             # if LLM configs not provided, do not allow rephrasing
             if self.rephrase_question is True:

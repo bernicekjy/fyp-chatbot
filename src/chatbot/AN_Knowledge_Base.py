@@ -1,6 +1,7 @@
 from knowledge_base_manager.core.database_manager import DatabaseManager
 from knowledge_base_manager.core.qna_manager import QnAManager
 from knowledge_base_manager.core.knowledge_base_manager import KnowledgeBaseManager
+from langchain_openai import AzureChatOpenAI
 from dotenv import load_dotenv
 import os
 
@@ -33,15 +34,32 @@ class AN_KB_Manager:
 
         # Defines index name
         self.index_name = "fyp-test-2"
+ 
+        
+        # Initialise LLM
+        azure_openai_endpoint = azure_openai_config.get("endpoint")
+        azure_openai_api_key = azure_openai_config.get("api_key")
+        azure_openai_deployment_name = azure_openai_config.get("deployment_name")
+        azure_openai_model_name = azure_openai_config.get("model_name")
+        azure_opanai_api_version = azure_openai_config.get("api_version")
 
+        llm =AzureChatOpenAI(
+                azure_endpoint=azure_openai_endpoint,
+                api_key=azure_openai_api_key,
+                deployment_name=azure_openai_deployment_name,
+                model_name=azure_openai_model_name,
+                api_version=azure_opanai_api_version,
+                temperature=0,
+            )
 
-        # Defines QnA kb manager
+        
+        # Define QnA Manager
         self.qna_manager = QnAManager(db_connection_str=os.environ.get("AZURE_COSMOSDB_CONNECTION_STR"),
             db_name = "testDatabase",
             collection_name = "testQuestions2",
             rephrase_question=True,
             categorise_question=True,
-            azure_openai_config=azure_openai_config)
+            llm=llm)
 
         # Defines chatbot kb manager
         self.kb = KnowledgeBaseManager(azure_text_embedding_config=azure_text_embedding_config, azure_ai_search_config=azure_ai_search_config,
