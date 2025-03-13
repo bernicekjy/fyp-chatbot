@@ -116,3 +116,9 @@ kb_manager = KnowledgeBaseManager(
 )
 ```
 
+### Use the `knowledge_base_manager` library in your own application
+To utilise the [`knowledge_base_manager` library](https://test.pypi.org/project/knowledge-base-manager/) in your own seperate application, run the following command to install the Python package.
+```bash
+pip install -i https://test.pypi.org/simple/ knowledge-base-manager
+```
+
