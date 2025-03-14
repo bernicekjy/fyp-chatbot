@@ -124,6 +124,31 @@ class QnAManager:
         update = {"status": "Irrelevant", "irrelevant":True}
         return self.db_manager.update_document(query=query, update=update)
 
+    
+    def mark_question_relevant(self, question: str) -> bool:
+        """
+        Mark a question as relevant.
+
+        :param question: The question to mark
+        :return: True if the question is found and updated
+        """
+
+        query = {"question": question}
+
+        # get new status of question
+        answer = self.db_manager.find_documents(query)
+
+        print("answer: ", answer)
+        if answer == "":
+            new_status = "Unanswered"
+        else:
+            new_status = "Answered"
+
+        update = {"status": new_status, "irrelevant":False}
+
+        
+        return self.db_manager.update_document(query=query, update=update)
+
     def get_answered_questions(self) -> List[Dict[str, Any]]:
         """
         Retrieve all answered questions from the database.

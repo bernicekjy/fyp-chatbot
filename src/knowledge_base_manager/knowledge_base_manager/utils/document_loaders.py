@@ -43,5 +43,4 @@ def strings_to_documents(strings, metadata_list=None):
         )
         documents.append(doc)
 
-    print("``````Documents", documents)
     return documents

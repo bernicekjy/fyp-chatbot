@@ -209,7 +209,7 @@ class KnowledgeBaseManager:
 
                 split_docs = self.text_splitter.split_documents([doc])
                 
-                logger.info(f"Results: {search_results}")
+                # logger.info(f"Results: {search_results}")
                 if search_results:
 
                     docs_to_update_id = [result["id"] for result in search_results]
