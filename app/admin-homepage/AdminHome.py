@@ -14,7 +14,7 @@ import pandas as pd
 st.set_page_config(
     page_title="AskNarelle - Course Coordinator Page", page_icon="🙋", layout='wide'
 )
-st.title(":woman-raising-hand: AN Admin")
+st.title(":woman-raising-hand: Ask Narelle Admin Page")
 st.write(f"For answering non-trivial queries related to {os.environ.get('COURSE_NAME')}")
 
 
@@ -47,6 +47,7 @@ column_order = ("status", "timestamp","question", "answer",  "category", 'irrele
 # # Initialise session state for checkbox
 # if "hide_irrelevant" not in st.session_state:
 #     st.session_state["hide_irrelevant"] = True 
+
 
 tab1, tab2 = st.tabs(["All Questions", "Relevant Questions"])
 
@@ -101,10 +102,18 @@ with tab1:
 
                     row_to_update = display_df.iloc[int(row_num)]
 
+                    print("row_to_update: ", row_to_update)
                     if row_to_update['irrelevant']:
                         # extract the updated question and answer
                         question = row_to_update['question']
-                        an_kb.qna_manager.mark_question_irrelevant(question=question)
+                        is_irrelevant = row_to_update['irrelevant']
+
+                        if is_irrelevant:
+                            an_kb.qna_manager.mark_question_irrelevant(question=question)
+                        else:
+                            an_kb.qna_manager.mark_question_relevant(question=question)
+                            print("marked qn relevant")
+
                         num_marked_irrelevant += 1
                     
                     if row_to_update['answer']:
@@ -116,15 +125,15 @@ with tab1:
                         an_kb.qna_manager.add_answer_to_question(question=question, answer=answer)
                         num_updated_entries += 1
 
-                # sync qna list to chatbot's knowledge base
-                an_kb.sync_qna_to_kb()
-
                 if num_updated_entries > 0:
+                    # sync qna list to chatbot's knowledge base
+                    an_kb.sync_qna_to_kb()
+
                     # show success message
                     st.success(f"Successfully updated the knowledge base with {num_updated_entries} new entries!")
 
                 if num_marked_irrelevant > 0:
-                    st.success(f"Marked {num_marked_irrelevant} questions as irrelevant.")
+                    st.success(f"Updated relevance of {num_marked_irrelevant} question(s).")
                 # # show success message
                 # st.success(f"Successfully updated the knowledge base with {len(edited_rows)} new entries!")
 
@@ -136,16 +145,11 @@ with tab1:
             st.error(f"An error occurred while attempting to update the knowledge base: {e}")
 with tab2:
         # Initialise session state for df
-    if 'qna_df ' not in st.session_state:
-        # if st.session_state["hide_irrelevant"]:
-        #     # fetch unanswered questions
-        st.session_state["qna_df"] = pd.DataFrame(an_kb.qna_manager.get_relevant_questions())
-        # else:
-        #     # fetch unanswered questions
-        #     st.session_state["qna_df"] = pd.DataFrame(an_kb.qna_manager.get_all_questions())
+    if 'relevant_df ' not in st.session_state:
+        st.session_state["relevant_df"] = pd.DataFrame(an_kb.qna_manager.get_relevant_questions())
 
     # apply the color formatting to the DataFrame for the "status" column
-    styled_df = st.session_state["qna_df"].style.map(
+    styled_df = st.session_state["relevant_df"].style.map(
         status_color_formatter, subset=pd.IndexSlice[:, ["status"]]
     )
 
@@ -213,12 +217,15 @@ with tab2:
                 # st.success(f"Successfully updated the knowledge base with {len(edited_rows)} new entries!")
 
                 # Reload data to refresh the unanswered questions list
-                st.session_state["qna_df"] = pd.DataFrame(an_kb.qna_manager.get_relevant_questions())
+                st.session_state["relevant_df"] = pd.DataFrame(an_kb.qna_manager.get_relevant_questions())
             else:
                 st.warning("No changes detected. Please edit a question to update the knowledge base.")
         except Exception as e:
             st.error(f"An error occurred while attempting to update the knowledge base: {e}")
 
-st.write(display_df['status'].value_counts())
+with st.sidebar:
+    st.header("Status of questions")
+    st.write(st.session_state["qna_df"]['status'].value_counts())
 
-st.write(display_df['category'].value_counts())
+    st.header("Categories of questions")
+    st.write(st.session_state["qna_df"]['category'].value_counts())
