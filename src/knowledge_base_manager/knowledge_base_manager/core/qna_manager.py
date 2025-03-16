@@ -1,14 +1,9 @@
 from typing import List, Dict, Any
 from .database_manager import DatabaseManager
 from datetime import datetime
-from utils.logger import get_logger
 from langchain.callbacks import get_openai_callback
 from openai import BadRequestError
 from langchain_core.language_models import BaseLanguageModel
-import os
-
-# import logger
-logger = get_logger(__name__)
 
 class QnAManager:
     def __init__(self, db_connection_str: str, db_name: str, collection_name: str, rephrase_question:bool = False, categorise_question:bool=False, llm:BaseLanguageModel=None):
@@ -51,27 +46,24 @@ class QnAManager:
 
         # If LLM configs provided, initialise Azure OpenAI LLM
         if llm is not None:
-
             self.llm = llm
     
-            logger.info("LLM initialised.")
         else:
-
-            logger.info("LLM not initialised.")
 
             # if LLM configs not provided, do not allow rephrasing
             if self.rephrase_question is True:
-                logger.error("Rephrasing not allowed. To allow rephrasing, please provide Azure OpenAI LLM configs.")
+                raise Exception("Rephrasing not allowed. To allow rephrasing, please provide Azure OpenAI LLM configs.")
 
                 self.rephrase_question = False
 
             # if LLM configs not provided, do not allow categorising questions
             if self.categorise_question is True:
-                logger.error("Categorising questions not allowed. To allow rephrasing, please provide Azure OpenAI LLM configs.")
+                raise Exception("Categorising questions not allowed. To allow rephrasing, please provide Azure OpenAI LLM configs.")
 
                 self.categorise_question = False
 
-        self.db_manager = DatabaseManager(db_connection_str=db_connection_str, db_name=db_name, collection_name=collection_name)
+        self.db_manager = DatabaseManager(db_connection_str=db_connection_str, db_name=db_name, collection_name=collection_name) 
+
 
 
     def add_unanswered_question(self, question:str, category:str=None)->bool:
@@ -236,8 +228,7 @@ class QnAManager:
 
                             Chat History:
                             {chat_history}"""
-        
-        logger.info("chat_history: "+str(chat_history))
+    
 
         try:
             # invoke LLM
@@ -254,7 +245,7 @@ class QnAManager:
 
             rephrased_question = response.content
         except BadRequestError as e:
-            logger.error("Error occurred while rephrasing question: "+str(e))
+            raise Exception("Error occurred while rephrasing question: "+str(e))
             return None
 
         return rephrased_question
@@ -327,6 +318,7 @@ class QnAManager:
             total_tokens = cb.total_tokens
                 
         return response.content
+    
 
     def resolve_non_trivial_query(self, chat_history: List[str]):
         """
@@ -348,23 +340,17 @@ class QnAManager:
             try:
                 # rephrase query into a single question with LLM
                 query_to_add = self.rephrase_to_single_question(chat_history=chat_history)
-
-                logger.info("Query rephrased to: "+query_to_add)
             except Exception as e:
-                logger.error("Error occurred while rephrasing question.")
+                raise Exception("Error occurred while rephrasing question.")
                 return
         else:
             # use latest question as query
             query_to_add = chat_history[-1]
 
-            logger.info("Query to add: "+query_to_add)
-
         # Categorise question if flag is set
         if self.categorise_question is True:
             # categorise the question
             category = self.get_question_category(user_question=query_to_add)
-
-            logger.info("Category: "+category)
 
             # add question to database
             self.add_unanswered_question(question=query_to_add, category=category)

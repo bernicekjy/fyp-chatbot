@@ -10,13 +10,22 @@ The `knowledge_base_manager` Python library provides functionality for managing 
 - **Azure AI Search Integration 🧠**: Utilize Azure AI Search for indexing and searching documents.
 - **OpenAI Integration 💬**: Leverage OpenAI models for text embedding and other NLP tasks.
 
-## Installation
 
-To install the required dependencies, use Poetry:
+## Prerequisites
 
-```bash
-poetry install
-```
+Before using the `knowledge_base_manager` library, ensure you have the following services set up:
+
+1. **Large Language Model (LLM) Setup (Optional)**:
+    - You can use any LLM service of your choice. If you choose to use Azure OpenAI, ensure you have the necessary endpoint, API key, deployment name, and model name.
+
+2. **Azure AI Search**:
+    - Set up an Azure AI Search service. You will need the endpoint and API key for integration.
+
+3. **Azure Cosmos DB**:
+    - Set up an Azure Cosmos DB to store your QnA data. You will need the connection string for the database.
+
+4. **Text Embedding Model on Azure**:
+    - Deploy a text embedding model on Azure. You will need the deployment name and model name for configuration.
 
 ## Setup
 
@@ -48,19 +57,34 @@ TEXT_EMBEDDING_MODEL_NAME=<your-text-embedding-model-name>
 
 ```python
 import os
-from knowledge_base_manager.core.database_manager import DatabaseManager
 from knowledge_base_manager.core.qna_manager import QnAManager
 from knowledge_base_manager.core.knowledge_base_manager import KnowledgeBaseManager
+from langchain_openai import AzureChatOpenAI
+from dotenv import load_dotenv
 
-# Initialize the database manager
-qna_db_manager = DatabaseManager(
-    db_connection_str=os.environ.get("AZURE_COSMOSDB_CONNECTION_STR"),
-    db_name="qnaDatabase",
-    collection_name="questions"
+# Load environment variables from the .env file
+load_dotenv()
+
+
+# Initialize the LLM used in QnAManager
+llm = AzureChatOpenAI(
+    azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+    api_key=os.environ.get("AZURE_OPENAI_APIKEY"),
+    deployment_name=os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME"),
+    model_name=os.environ.get("AZURE_OPENAI_MODEL_NAME"),
+    api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
+    temperature=0
 )
 
-# Initialize the QnA manager
-qna_manager = QnAManager(qna_db_manager)
+# Initialise QnA Manager
+qna_manager = QnAManager(
+    db_connection_str=os.environ.get("AZURE_COSMOSDB_CONNECTION_STR"),
+    db_name="databaseName",
+    collection_name="collectionName",
+    rephrase_question=True, # if True, must provide llm
+    categorise_question=True, # if True, must provide llm
+    llm=llm # Optional
+)
 
 # Initialize the knowledge base manager
 kb_manager = KnowledgeBaseManager(
@@ -74,7 +98,7 @@ kb_manager = KnowledgeBaseManager(
         "endpoint": os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
         "api_key": os.environ.get("AZURE_AI_SEARCH_API_KEY")
     },
-    index_name="your-index-name"
+    index_name="index-name"
 )
 ```
 
@@ -86,7 +110,9 @@ documents = [
     {"id": "2", "content": "How do I submit assignments?"}
 ]
 
+# Add or update documents in the knowledge base
 kb_manager.add_or_update_docs(documents)
+```
 ```
 
 ### Fetching and Indexing Data

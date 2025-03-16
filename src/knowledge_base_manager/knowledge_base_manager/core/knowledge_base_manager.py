@@ -21,11 +21,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 from knowledge_base_manager.utils.document_loaders import load_document, strings_to_documents
 from knowledge_base_manager.core.qna_manager import QnAManager
-from utils.logger import get_logger
 import traceback
 from typing import Dict 
-# Load logger
-logger = get_logger(__name__)
+
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -157,7 +155,6 @@ class KnowledgeBaseManager:
             # Creates the new search index or updates it if it already exists
             self.search_index_client.create_or_update_index(index=searchindex)
 
-            logger.info(f"Index {self.index_name} created successfully.")
             return self.index_name
         except Exception as e:
             return e
@@ -180,7 +177,6 @@ class KnowledgeBaseManager:
                        and returns the exception.
         """
         
-        logger.info("Adding or updating documents in the knowledge base...")
         search_client = SearchClient(
                 endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
                 index_name=self.index_name,
@@ -189,96 +185,90 @@ class KnowledgeBaseManager:
                 ),
             )
 
-        logger.info(f"Documents: {documents}")
-        try:
-            # List to store all the docs that need to be added
-            docs_to_add_final = []
+        # List to store all the docs that need to be added
+        docs_to_add_final = []
 
-            # List to store all the docs that need to be updated
-            docs_to_update_final = []
+        # List to store all the docs that need to be updated
+        docs_to_update_final = []
 
-            # Loop to separate the docs that need to be updated from the docs that need to be added
-            for doc in documents:
-                filename = Path(doc.metadata["source"]).name
+        # Loop to separate the docs that need to be updated from the docs that need to be added
+        for doc in documents:
+            filename = Path(doc.metadata["source"]).name
 
 
-                # check if document already exists
-                search_results = list(
-                    search_client.search(filter=f"title eq '{filename}'")
-                )
+            # check if document already exists
+            search_results = list(
+                search_client.search(filter=f"title eq '{filename}'")
+            )
 
-                split_docs = self.text_splitter.split_documents([doc])
-                
-                # logger.info(f"Results: {search_results}")
-                if search_results:
+            split_docs = self.text_splitter.split_documents([doc])
+            
+            # logger.info(f"Results: {search_results}")
+            if search_results:
 
-                    docs_to_update_id = [result["id"] for result in search_results]
-                    docs_to_update_page_content = [
-                        sdoc.page_content for sdoc in split_docs
-                    ]  # ["Hello", "There"]
-                    docs_to_update_embeddings = self.embeddings.embed_documents(
-                        docs_to_update_page_content
-                    )  # [[0.001,0.003], [0.002, 0.005]]
-                    num_existing_docs = len(search_results)
+                docs_to_update_id = [result["id"] for result in search_results]
+                docs_to_update_page_content = [
+                    sdoc.page_content for sdoc in split_docs
+                ]  # ["Hello", "There"]
+                docs_to_update_embeddings = self.embeddings.embed_documents(
+                    docs_to_update_page_content
+                )  # [[0.001,0.003], [0.002, 0.005]]
+                num_existing_docs = len(search_results)
 
-                     
-                    for i, sdoc in enumerate(split_docs[:num_existing_docs]):
-                        docs_to_update_final.append(
-                            {
-                                "id": docs_to_update_id[i],
-                                "content": sdoc.page_content,
-                                "content_vector": docs_to_update_embeddings[i],
-                                "title": filename,
-                            }
-                        )
-
-                    # if updated document requires more chunks of docs to be stored, add them
-                    if len(split_docs) > num_existing_docs:
-
-                        for i, sdoc in enumerate(split_docs[num_existing_docs:]):
-
-                            docs_to_add_final.append(
-                                {
-                                    "id": str(uuid.uuid4()),
-                                    "content": sdoc.page_content,
-                                    "content_vector": docs_to_update_embeddings[i+num_existing_docs],
-                                    "title": filename,
-                                }
-                            )
-
-                    print(f"updated {filename}!")
-                else:
-                    docs_to_add_page_content = [
-                        sdoc.page_content for sdoc in split_docs
-                    ]
-                    docs_to_add_embeddings = self.embeddings.embed_documents(
-                        docs_to_add_page_content
+                    
+                for i, sdoc in enumerate(split_docs[:num_existing_docs]):
+                    docs_to_update_final.append(
+                        {
+                            "id": docs_to_update_id[i],
+                            "content": sdoc.page_content,
+                            "content_vector": docs_to_update_embeddings[i],
+                            "title": filename,
+                        }
                     )
 
-                    for i, sdoc in enumerate(split_docs):
+                # if updated document requires more chunks of docs to be stored, add them
+                if len(split_docs) > num_existing_docs:
+
+                    for i, sdoc in enumerate(split_docs[num_existing_docs:]):
+
                         docs_to_add_final.append(
                             {
                                 "id": str(uuid.uuid4()),
                                 "content": sdoc.page_content,
-                                "content_vector": docs_to_add_embeddings[i],
+                                "content_vector": docs_to_update_embeddings[i+num_existing_docs],
                                 "title": filename,
                             }
                         )
 
-                    print(f"added {filename}!")
+                print(f"updated {filename}!")
+            else:
+                docs_to_add_page_content = [
+                    sdoc.page_content for sdoc in split_docs
+                ]
+                docs_to_add_embeddings = self.embeddings.embed_documents(
+                    docs_to_add_page_content
+                )
 
-            if docs_to_update_final:
-                search_client.merge_documents(docs_to_update_final)
+                for i, sdoc in enumerate(split_docs):
+                    docs_to_add_final.append(
+                        {
+                            "id": str(uuid.uuid4()),
+                            "content": sdoc.page_content,
+                            "content_vector": docs_to_add_embeddings[i],
+                            "title": filename,
+                        }
+                    )
 
-            if docs_to_add_final:
-                search_client.upload_documents(docs_to_add_final)
+                print(f"added {filename}!")
 
-            return True
+        if docs_to_update_final:
+            search_client.merge_documents(docs_to_update_final)
 
-        except Exception as e:
-            logger.error(f"An error occurred: {traceback.format_exc()}")
-            return e
-    
+        if docs_to_add_final:
+            search_client.upload_documents(docs_to_add_final)
+
+        return True
+
     def add_or_update_from_strings(self, strings):
         """
         Add or update documents in the knowledge base from a list of strings.
@@ -367,13 +357,10 @@ class KnowledgeBaseManager:
             bool: True if the index was successfully deleted, False otherwise.
         """
 
-        try:
-            self.search_index_client.delete_index(index=self.index_name)
-            logger.info(f"Index {self.index_name} deleted successfully.")
-            return True
-        except Exception as e:
-            logger.error(f"An error occurred: {e}")
-            return False
+        self.search_index_client.delete_index(index=self.index_name)
+        
+        return True
+
 
     def similarity_search(self, query, top_k=5) -> SearchItemPaged[Dict]:
         """

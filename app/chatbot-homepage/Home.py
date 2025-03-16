@@ -57,8 +57,8 @@ if prompt := st.chat_input("Ask Narelle a question..."):
         
         st.write(chatbot_response)
 
-        with st.popover("View context used"):
-            st.write(context)
+        # with st.popover("View context used"):
+        #     st.write(context)
         
 
     st.session_state.messages.append({"role": "assistant", "content": chatbot_response})

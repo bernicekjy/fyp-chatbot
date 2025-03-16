@@ -61,8 +61,6 @@ class Narelle:
         # Initialise chat history
         self.chat_history = []
 
-
-
         # Cost tracking
         self.total_api_cost = 0
         self.total_api_tokens = 0
@@ -81,10 +79,15 @@ class Narelle:
         sources = []
 
         documents = self.search_client.search(context_query, top=k)
+        print("QUERY: ", context_query,"\nDOCS:")
 
         for doc in documents:
             contexts.append(doc["content"])
             sources.append(doc["title"])
+            print("\ntitle: ",doc["title"])
+            print("\ncontent: ", doc["content"])
+            print("\nsimilarity scores: ", doc['@search.score'])
+            print("\n-------------------")
 
         return contexts, list(set(sources))
 
