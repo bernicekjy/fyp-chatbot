@@ -1,6 +1,6 @@
-from knowledge_base_manager.core.database_manager import DatabaseManager
-from knowledge_base_manager.core.qna_manager import QnAManager
-from knowledge_base_manager.core.knowledge_base_manager import KnowledgeBaseManager
+from knowledge_base_manager.knowledge_base_manager.core.qna_manager import QnAManager
+from knowledge_base_manager.knowledge_base_manager.core.knowledge_base_manager import KnowledgeBaseManager
+from knowledge_base_manager.knowledge_base_manager.types import Category
 from langchain_openai import AzureChatOpenAI
 from dotenv import load_dotenv
 import os
@@ -52,14 +52,25 @@ class AN_KB_Manager:
                 temperature=0,
             )
 
+        # Define question categories
+        question_categories = [
+            Category(title="ADMIN", description="Questions about deadlines, submission processes, group work policies, lab sites, or assignment logistics.", example_question="Where do I submit the mini project?"),
+            Category(title="TECHNICAL", description="Questions about programming errors, technical setup, or software issues.", example_question="How do I resolve this error when installing the library?"),
+            Category(title="CONTENT", description="Questions about course material, lecture content, concepts, or explanations of topics.", example_question="Can you explain the concept of dynamic programming again?"),
+            Category(title="EVALUATION", description="Questions about grading criteria, marking schemes, or assessment feedback.", example_question="How many marks is the final project worth?"),
+            Category(title="RESOURCE", description="Questions requesting additional resources, study materials, or sample solutions.", example_question="Do you have any sample solutions from last year’s exam?"),
+            Category(title="UNCATEGORISED", description="Questions that do not clearly fit into any of the above categories.", example_question="I am confused about something but I’m not sure how to explain it."),
+            Category(title="IRRELEVANT", description="Questions that are unrelated to the course or inappropriate.", example_question="What’s the best pizza place near campus?")
+        ]
         
         # Define QnA Manager
         self.qna_manager = QnAManager(db_connection_str=os.environ.get("AZURE_COSMOSDB_CONNECTION_STR"),
             db_name = "testDatabase",
             collection_name = "testQuestions2",
+            llm=llm,
             rephrase_question=True,
             categorise_question=True,
-            llm=llm)
+            categories=question_categories)
 
         # Defines chatbot kb manager
         self.kb = KnowledgeBaseManager(azure_text_embedding_config=azure_text_embedding_config, azure_ai_search_config=azure_ai_search_config,

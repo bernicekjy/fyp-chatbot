@@ -19,8 +19,8 @@ from azure.search.documents import SearchClient, SearchItemPaged
 import uuid
 from pathlib import Path
 from dotenv import load_dotenv
-from knowledge_base_manager.utils.document_loaders import load_document, strings_to_documents
-from knowledge_base_manager.core.qna_manager import QnAManager
+from ..utils.document_loaders import load_document, strings_to_documents
+from .qna_manager import QnAManager
 import traceback
 from typing import Dict 
 

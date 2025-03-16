@@ -4,41 +4,34 @@ from datetime import datetime
 from langchain.callbacks import get_openai_callback
 from openai import BadRequestError
 from langchain_core.language_models import BaseLanguageModel
+from knowledge_base_manager.knowledge_base_manager.types import Category
 
 class QnAManager:
-    def __init__(self, db_connection_str: str, db_name: str, collection_name: str, rephrase_question:bool = False, categorise_question:bool=False, llm:BaseLanguageModel=None):
+    def __init__(self, db_connection_str: str, db_name: str, collection_name: str, llm:BaseLanguageModel=None, rephrase_question:bool = False, categorise_question:bool=False, categories:List[Category]=None):
         """
-        Initializes the QnAManager with the specified database connection string, database name, and collection name.
+        Initializes the QnAManager with the specified parameters.
 
         Args:
             db_connection_str (str): The connection string for the database.
             db_name (str): The name of the database.
             collection_name (str): The name of the collection within the database.
-            rephrase_question (bool, optional): Flag to indicate if questions should be rephrased. Defaults to False.
-            categorise_question (bool, optional): Flag to indicate if questions should be categorized. Defaults to False.
-            llm (BaseLanguageModel, optional): An instance of a language model to be used. Defaults to None.
+            llm (BaseLanguageModel, optional): The language model to use for processing questions. Defaults to None.
+            rephrase_question (bool, optional): Whether to rephrase the question before processing. Defaults to False.
+            categorise_question (bool, optional): Whether to categorize the question. Defaults to False.
+            categories (List[Category], optional): A list of categories for question classification. Defaults to None.
 
         Example:
-
-            azure_openai_config = {
-                "endpoint": "https://example-endpoint.openai.azure.com/",
-                "api_key": "your_api_key",
-                "deployment_name": "your_deployment_name",
-                "model_name": "your_model_name",
-                "api_version": "2023-10-01"
-            }
-
-            llm = AzureChatOpenAI(config=azure_openai_config)
-
             qna_manager = QnAManager(
-                db_connection_str="mongodb://localhost:27017/",
-                db_name="mydatabase",
-                collection_name="qna_collection",
+                db_connection_str="your_connection_string",
+                db_name="your_db_name",
+                collection_name="your_collection_name",
+                llm=your_language_model,
                 rephrase_question=True,
                 categorise_question=True,
-                llm=llm
+                categories=[Category(title="Example", description="Example category", example_question="What is an example?")]
             )
         """
+       
 
         # Set flags for LLM features
         self.rephrase_question = rephrase_question
@@ -49,7 +42,6 @@ class QnAManager:
             self.llm = llm
     
         else:
-
             # if LLM configs not provided, do not allow rephrasing
             if self.rephrase_question is True:
                 raise Exception("Rephrasing not allowed. To allow rephrasing, please provide Azure OpenAI LLM configs.")
@@ -62,9 +54,38 @@ class QnAManager:
 
                 self.categorise_question = False
 
+        # initialise database manager
         self.db_manager = DatabaseManager(db_connection_str=db_connection_str, db_name=db_name, collection_name=collection_name) 
 
+        # Initialise categorise question prompt
+        if self.categorise_question:
+            if categories is not None:
+                self.categories = categories
+            else:
+                raise Exception("Categorising questions not allowed. To allow rephrasing, please provide the relevant categories.")
+        
 
+    def generate_categories_list_string(self, categories: List[Category]) -> str:
+        """
+        Generates a formatted categories list string from a list of category dictionaries.
+
+        Args:
+            categories (List[Category]): A list of type Category, each containing 'title', 'description', and 'example_question'.
+
+        Returns:
+            str: A formatted categories list string.
+        """
+        categories_list = "CATEGORIES:\n"
+        for category in categories:
+            categories_list += f"- {category.title.upper()}: {category.description}\n"
+        categories_list += "\n"
+        
+        for i, category in enumerate(categories):
+            categories_list += f"EXAMPLE {i + 1}\n"
+            categories_list += f"Question: \"{category.example_question}\"\n"
+            categories_list += f"Return: {category.title.upper()}\n\n"
+        
+        return categories_list
 
     def add_unanswered_question(self, question:str, category:str=None)->bool:
         """Add a new unanswered question to the database
@@ -260,7 +281,12 @@ class QnAManager:
             str: The category name
         """
 
-        categorise_prompt = f"""You are a helpful assistant for a course instructor. Your task is to categorize student questions into one of the following categories. You should return ONLY the category name in CAPITAL LETTERS. Do not explain your reasoning or provide additional text. Choose the most appropriate category from the list below:
+        # unused variable
+        categorise_prompt_full = f"""You are a helpful assistant for a course instructor. 
+                                Your task is to categorize student questions into one of the following categories. 
+                                You should return ONLY the category name in CAPITAL LETTERS. 
+                                Do not explain your reasoning or provide additional text. 
+                                Choose the most appropriate category from the list below:
 
                                 CATEGORIES:
                                 - ADMIN: Questions about deadlines, submission processes, group work policies, lab sites, or assignment logistics.
@@ -305,6 +331,21 @@ class QnAManager:
 
                                 """
 
+        # get the categories in a form of a string
+        categories_list = self.generate_categories_list_string(self.categories)
+
+        categorise_prompt = f"""You are a helpful assistant for a course instructor. Your task is to categorize student questions into one of the following categories. You should return ONLY the category name in CAPITAL LETTERS. 
+                                Do not explain your reasoning or provide additional text. Choose the most appropriate category from the list below:
+
+                                {categories_list}
+
+                                NOW CATEGORIZE THE FOLLOWING QUESTION:
+                                Question: "{user_question}"
+                                Return:
+
+                                """
+        
+        print("categorise_prompt:\n", categorise_prompt)
         # invoke LLM
         with get_openai_callback() as cb:
 

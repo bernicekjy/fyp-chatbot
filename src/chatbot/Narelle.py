@@ -5,11 +5,9 @@ from langchain_openai import AzureChatOpenAI
 from typing import List
 from langchain.callbacks import get_openai_callback
 from datetime import datetime
-from knowledge_base_manager.core.database_manager import DatabaseManager
-from knowledge_base_manager.core.qna_manager import QnAManager
 from chatbot.AN_Knowledge_Base import AN_KB_Manager
 from utils.logger import get_logger
-from openai import BadRequestError
+
 
 # import logger
 logger = get_logger(__name__)

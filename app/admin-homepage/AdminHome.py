@@ -2,9 +2,6 @@ import streamlit as st
 import os
 import sys
 # sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-from knowledge_base_manager.core.database_manager import DatabaseManager
-from knowledge_base_manager.core.qna_manager import QnAManager
-from knowledge_base_manager.core.knowledge_base_manager import KnowledgeBaseManager
 from chatbot.AN_Knowledge_Base import AN_KB_Manager
 import pandas as pd
 # # Load environment variables from the .env file
