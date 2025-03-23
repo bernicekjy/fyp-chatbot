@@ -28,7 +28,15 @@ Before using the `knowledge_base_manager` library, ensure you have the following
     - Deploy a text embedding model on Azure. You will need the deployment name and model name for configuration.
 
 ## Setup
+### Installing Dependencies
 
+Before proceeding, ensure you have Python installed. Then, install the required dependencies by running the following command:
+
+```bash
+pip install pymongo utils langchain langchain-community azure azure-search-documents azure-core azure-common
+```
+
+### Environment Variables
 Ensure you have the following environment variables set up in your `.env` file:
 
 ```env
@@ -59,6 +67,7 @@ TEXT_EMBEDDING_MODEL_NAME=<your-text-embedding-model-name>
 import os
 from knowledge_base_manager.core.qna_manager import QnAManager
 from knowledge_base_manager.core.knowledge_base_manager import KnowledgeBaseManager
+from knowledge_base_manager.types import Category
 from langchain_openai import AzureChatOpenAI
 from dotenv import load_dotenv
 
@@ -76,6 +85,17 @@ llm = AzureChatOpenAI(
     temperature=0
 )
 
+# Example categories for categorizing questions
+categories = [
+    Category(title="ADMIN", description="Questions about deadlines, submission processes, group work policies, lab sites, or assignment logistics.", example_question="Where do I submit the mini project?"),
+    Category(title="TECHNICAL", description="Questions about programming errors, technical setup, or software issues.", example_question="How do I resolve this error when installing the library?"),
+    Category(title="CONTENT", description="Questions about course material, lecture content, concepts, or explanations of topics.", example_question="Can you explain the concept of dynamic programming again?"),
+    Category(title="EVALUATION", description="Questions about grading criteria, marking schemes, or assessment feedback.", example_question="How many marks is the final project worth?"),
+    Category(title="RESOURCE", description="Questions requesting additional resources, study materials, or sample solutions.", example_question="Do you have any sample solutions from last year’s exam?"),
+    Category(title="UNCATEGORISED", description="Questions that do not clearly fit into any of the above categories.", example_question="I am confused about something but I’m not sure how to explain it."),
+    Category(title="IRRELEVANT", description="Questions that are unrelated to the course or inappropriate.", example_question="What’s the best pizza place near campus?")
+]
+
 # Initialise QnA Manager
 qna_manager = QnAManager(
     db_connection_str=os.environ.get("AZURE_COSMOSDB_CONNECTION_STR"),
@@ -83,10 +103,13 @@ qna_manager = QnAManager(
     collection_name="collectionName",
     rephrase_question=True, # if True, must provide llm
     categorise_question=True, # if True, must provide llm
-    llm=llm # Optional
+    llm=llm, # Optional
+    categories=categories # List of categories for question categorization
 )
+```
 
 # Initialize the knowledge base manager
+```python
 kb_manager = KnowledgeBaseManager(
     azure_text_embedding_config={
         "azure_deployment": os.environ.get("TEXT_EMBEDDING_MODEL_DEPLOYMENT"),

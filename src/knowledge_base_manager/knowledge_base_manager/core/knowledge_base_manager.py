@@ -240,7 +240,7 @@ class KnowledgeBaseManager:
                             }
                         )
 
-                print(f"updated {filename}!")
+                print(f"Updated {filename}!")
             else:
                 docs_to_add_page_content = [
                     sdoc.page_content for sdoc in split_docs
@@ -259,7 +259,7 @@ class KnowledgeBaseManager:
                         }
                     )
 
-                print(f"added {filename}!")
+                print(f"Added {filename}!")
 
         if docs_to_update_final:
             search_client.merge_documents(docs_to_update_final)
@@ -331,8 +331,6 @@ class KnowledgeBaseManager:
 
 
         try:
-            print(fileName)
-
             # Search for all the docs/chunks with that particular fileName
             search_result = self.search_index_client.search(filter=f"filename eq '{fileName}'")
             ids_to_delete = []

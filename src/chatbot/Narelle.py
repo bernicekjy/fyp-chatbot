@@ -77,15 +77,11 @@ class Narelle:
         sources = []
 
         documents = self.search_client.search(context_query, top=k)
-        print("QUERY: ", context_query,"\nDOCS:")
 
         for doc in documents:
             contexts.append(doc["content"])
             sources.append(doc["title"])
-            print("\ntitle: ",doc["title"])
-            print("\ncontent: ", doc["content"])
-            print("\nsimilarity scores: ", doc['@search.score'])
-            print("\n-------------------")
+
 
         return contexts, list(set(sources))
 
@@ -98,13 +94,11 @@ class Narelle:
     def set_chat_history(self, chat_history: List[str]):
         self.chat_history = chat_history
 
-        logger.info("Chat history set to: " + str(self.chat_history))
 
     def clear_chat_history(self):
         self.chat_history = []
 
     def get_latest_chat_history(self, num_chat_history=6):
-        logger.info("Chat history from fn: " + str(self.chat_history))
 
         # extract top few chats
         latest_chat_history = self.chat_history
@@ -114,7 +108,6 @@ class Narelle:
             latest_chat_history = self.chat_history[(num_chat_history * -1) :]
             logger.info("Trimmed")
 
-        logger.info("Latest chat history: " + str(latest_chat_history))
 
         return latest_chat_history
 
@@ -124,7 +117,6 @@ class Narelle:
 
         context_string = "\n\n---------------\n".join(context)
 
-        logger.info("Chat history: "+str(self.chat_history))
         # extract top few chats
         latest_chat_history = self.get_latest_chat_history(
             num_chat_history=num_chat_history
@@ -176,8 +168,6 @@ class Narelle:
             self.kb_manager.qna_manager.resolve_non_trivial_query(chat_history=chat_history_with_query)
 
         self.chat_history.append(chatbot_response)
-
-        logger.info("Chat history 2: "+str(self.chat_history))
 
         return {
             "chatbot_response": chatbot_response,

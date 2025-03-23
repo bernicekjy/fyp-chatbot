@@ -25,7 +25,7 @@ def test_with_chatlog():
     # Load chatlog conversations
     chatlog = import_chatlog()
 
-    chatlog_conversations = chatlog["chatlog"][200:700]
+    chatlog_conversations = chatlog["chatlog"][:200]
 
     # Load Ask Narelle chatbot
     chatbot = Narelle()

@@ -33,7 +33,7 @@ class AN_KB_Manager:
         }
 
         # Defines index name
-        self.index_name = "fyp-test-2"
+        self.index_name = "fyp-test-3" # <--- change index name here
  
         
         # Initialise LLM
@@ -65,8 +65,8 @@ class AN_KB_Manager:
         
         # Define QnA Manager
         self.qna_manager = QnAManager(db_connection_str=os.environ.get("AZURE_COSMOSDB_CONNECTION_STR"),
-            db_name = "testDatabase",
-            collection_name = "testQuestions2",
+            db_name = "testDatabase", # <--- change database name here
+            collection_name = "testQuestions4", # <--- change collection name here
             llm=llm,
             rephrase_question=True,
             categorise_question=True,
@@ -82,3 +82,5 @@ class AN_KB_Manager:
         # generate a new qna document and update kb
         return self.kb.fetch_and_index_cosmosdb_data( qna_manager=self.qna_manager)
 
+    def create_index(self):
+        return self.kb.create_index()

@@ -4,7 +4,7 @@ from datetime import datetime
 from langchain.callbacks import get_openai_callback
 from openai import BadRequestError
 from langchain_core.language_models import BaseLanguageModel
-from knowledge_base_manager.knowledge_base_manager.types import Category
+from knowledge_base_manager.types import Category
 
 class QnAManager:
     def __init__(self, db_connection_str: str, db_name: str, collection_name: str, llm:BaseLanguageModel=None, rephrase_question:bool = False, categorise_question:bool=False, categories:List[Category]=None):
@@ -149,9 +149,8 @@ class QnAManager:
         query = {"question": question}
 
         # get new status of question
-        answer = self.db_manager.find_documents(query)
+        answer = self.db_manager.find_documents(query)[0]['answer']
 
-        print("answer: ", answer)
         if answer == "":
             new_status = "Unanswered"
         else:
@@ -245,7 +244,8 @@ class QnAManager:
             "Can I cancel the subscription anytime?"
         """
         
-        rephrase_prompt = f"""Given the following conversation and a follow up question, rephrase the latest user query to be a standalone query. Respond with only the rephrased question.
+        rephrase_prompt = f"""Given the following conversation and a follow up question, rephrase the latest user query to be a standalone query. 
+                            Respond with only the rephrased question.
 
                             Chat History:
                             {chat_history}"""
@@ -261,8 +261,8 @@ class QnAManager:
                 #     f"=======[LLM COST] total cost: {cb.total_cost}; total tokens: {cb.total_tokens}"
                 # )
 
-                total_cost = cb.total_cost
-                total_tokens = cb.total_tokens
+                total_cost = cb.total_cost # noqa: F841
+                total_tokens = cb.total_tokens  # noqa: F841
 
             rephrased_question = response.content
         except BadRequestError as e:
@@ -345,7 +345,6 @@ class QnAManager:
 
                                 """
         
-        print("categorise_prompt:\n", categorise_prompt)
         # invoke LLM
         with get_openai_callback() as cb:
 
