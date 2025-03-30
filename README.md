@@ -1,5 +1,7 @@
 # Iterative Learning with AskNarelle 🙋🏻‍♀️ 🧠 ✨
 
+By: Bernice Koh Jun Yan
+
 ## Overview
 This repository consists of two main components:
 
@@ -27,9 +29,9 @@ git clone https://github.com/bernicekjy/fyp-chatbot.git
 ### 3. Setting up the Environment
 
 #### Install Dependencies
-Use Poetry to install all dependencies:
+Install all dependencies:
 ```bash
-poetry install
+pip install -r requirements.txt
 ```
 
 #### Setting Up the `.env` File
