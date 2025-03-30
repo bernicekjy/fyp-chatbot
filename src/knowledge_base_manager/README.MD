@@ -108,7 +108,7 @@ qna_manager = QnAManager(
 )
 ```
 
-# Initialize the knowledge base manager
+### Initialize the knowledge base manager
 ```python
 kb_manager = KnowledgeBaseManager(
     azure_text_embedding_config={
@@ -135,7 +135,6 @@ documents = [
 
 # Add or update documents in the knowledge base
 kb_manager.add_or_update_docs(documents)
-```
 ```
 
 ### Fetching and Indexing Data

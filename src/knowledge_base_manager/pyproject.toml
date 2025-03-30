@@ -1,6 +1,6 @@
 [project]
 name = "knowledge-base-manager"
-version = "0.1.8"
+version = "0.1.9"
 description = "This Python module is designed to manage and expand knowledge bases (KBs) for chatbots. It enables dynamic growth of the knowledge base by seamlessly adding question and answer (QnA) pairs. The module integrates with Azure Cosmos DB using MongoDB for scalable storage and uses Azure AI Search for efficient knowledge base retrieval. Additionally, it leverages the Azure OpenAI model for generating text embeddings, enhancing the chatbot's ability to understand and respond to user queries effectively."
 authors = [
     {name = "Bernice K"}
