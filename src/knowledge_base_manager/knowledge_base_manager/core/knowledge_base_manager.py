@@ -1,4 +1,4 @@
-from langchain.embeddings import AzureOpenAIEmbeddings
+from langchain_community.embeddings import AzureOpenAIEmbeddings
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
@@ -177,13 +177,6 @@ class KnowledgeBaseManager:
                        and returns the exception.
         """
         
-        search_client = SearchClient(
-                endpoint=os.environ.get("AZURE_AI_SEARCH_ENDPOINT"),
-                index_name=self.index_name,
-                credential=AzureKeyCredential(
-                    os.environ.get("AZURE_AI_SEARCH_API_KEY")
-                ),
-            )
 
         # List to store all the docs that need to be added
         docs_to_add_final = []
@@ -198,7 +191,7 @@ class KnowledgeBaseManager:
 
             # check if document already exists
             search_results = list(
-                search_client.search(filter=f"title eq '{filename}'")
+                self.search_client.search(filter=f"title eq '{filename}'")
             )
 
             split_docs = self.text_splitter.split_documents([doc])
@@ -262,10 +255,10 @@ class KnowledgeBaseManager:
                 print(f"Added {filename}!")
 
         if docs_to_update_final:
-            search_client.merge_documents(docs_to_update_final)
+            self.search_client.merge_documents(docs_to_update_final)
 
         if docs_to_add_final:
-            search_client.upload_documents(docs_to_add_final)
+            self.search_client.upload_documents(docs_to_add_final)
 
         return True
 

@@ -1,6 +1,6 @@
 
 from langchain_community.document_loaders import TextLoader
-from langchain.document_loaders import PyPDFLoader, Docx2txtLoader, CSVLoader
+from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, CSVLoader
 from langchain.schema import Document
 import warnings
 
@@ -36,7 +36,7 @@ def strings_to_documents(strings, metadata_list=None):
     """
     documents = []
     for i, string in enumerate(strings):
-        metadata = metadata_list[i] if metadata_list else {"source": f"Updated Questions & Answers from Instructor {i + 1}"}
+        metadata = metadata_list[i] if metadata_list else {"source": f"Updated Questions & Answers {i + 1}"}
         doc = Document(
             page_content=string,
             metadata=metadata

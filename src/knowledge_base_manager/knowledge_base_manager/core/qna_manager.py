@@ -40,7 +40,6 @@ class QnAManager:
         # If LLM configs provided, initialise Azure OpenAI LLM
         if llm is not None:
             self.llm = llm
-    
         else:
             # if LLM configs not provided, do not allow rephrasing
             if self.rephrase_question is True:
